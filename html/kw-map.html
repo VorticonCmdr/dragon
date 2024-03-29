@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0" />
+    <meta name="referrer" content="none" />
+
+    <title>kw map</title>
+
+    <link rel="stylesheet" href="/css/bootstrap.v5.2.0.min.css"/>
+    <link rel="stylesheet" href="/bootstrap-icons-1.8.1/bootstrap-icons.css" />
+    <link rel="stylesheet" href="/css/bootstrap-table.min.v1.21.1.css"/>
+
+  </head>
+
+  <body style="background-color: #ebeff7; overflow: hidden;">
+    <button id="menuBtn" style="z-index:3;" class="btn btn-link position-absolute z-3 mx-2 my-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMenu"><img src="/icons/dragon128.png" alt="blue dragon" width="32" height="32" class="d-inline-block align-text-bottom"></button>
+
+    <div id="board" class="position-absolute w-100 h-100" style="z-index:0;">
+      <svg id="map"></svg>
+    </div>
+
+    <div id="table" class="container-fluid invisible">
+      <table id="jsonTable" class="mx-2 my-2"
+        data-show-refresh="false"
+        data-search="true"
+        data-pagination="true"
+        data-page-size="1000"
+        data-show-export="true"
+        data-show-columns="true">
+      </table>
+    </div>
+
+    <div class="modal fade" id="loadModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="loadModalLabel">load crawl</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="list-group crawlLoad">
+            </div>
+          </div>
+          <div class="modal-footer">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="configModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="configModalLabel">config</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <span class="fw-bolder text-center">cluster</span>
+            </div>
+            <div class="mb-1 row">
+              <label for="eps" class="col-sm-3 col-form-label">eps <span id="epsValue">0.3</span></label>
+              <div class="col">
+                <input type="range" class="form-range" min="0" max="1" step="0.1" value="0.3" id="eps">
+              </div>
+            </div>
+            <div class="mb-1 row">
+              <label for="minPts" class="col-sm-3 col-form-label">minPts <span id="minPtsValue">3</span></label>
+              <div class="col">
+                <input type="range" class="form-range" min="1" max="100" step="1" value="3" id="minPts">
+              </div>
+            </div>
+            <div class="row">
+              <span class="fw-bolder text-center">points</span>
+            </div>
+            <div class="mb-1 row">
+              <label for="defaultOpacity" class="col-sm-3 col-form-label">default opacity <span id="defaultOpacityValue">0.7</span></label>
+              <div class="col">
+                <input type="range" class="form-range" min="0" max="1" step="0.1" value="0.7" id="defaultOpacity">
+              </div>
+            </div>
+            <div class="mb-1 row">
+              <label for="selectedOpacity" class="col-sm-3 col-form-label">selected opacity <span id="selectedOpacityValue">1.0</span></label>
+              <div class="col">
+                <input type="range" class="form-range" min="0" max="1" step="0.1" value="1.0" id="selectedOpacity">
+              </div>
+            </div>
+            <div class="mb-1 row">
+              <label for="unselectedOpacity" class="col-sm-3 col-form-label">unselected opacity <span id="unselectedOpacityValue">0.2</span></label>
+              <div class="col">
+                <input type="range" class="form-range" min="0" max="1" step="0.1" value="0.2" id="unselectedOpacity">
+              </div>
+            </div>
+            <div class="row">
+              <span class="fw-bolder text-center">umap</span>
+            </div>
+            <div class="mb-1 row">
+              <label for="minDist" class="col-sm-3 col-form-label">minDist <span id="minDistValue">0.1</span></label>
+              <div class="col">
+                <input type="range" class="form-range" min="0" max="10" step="0.1" value="0.1" id="minDist">
+              </div>
+            </div>
+            <div class="mb-1 row">
+              <label for="spread" class="col-sm-3 col-form-label">spread <span id="spreadValue">1.0</span></label>
+              <div class="col">
+                <input type="range" class="form-range" min="0" max="10" step="0.1" value="1.0" id="spread">
+              </div>
+            </div>
+            <div class="mb-1 row">
+              <label for="nNeighbors" class="col-sm-3 col-form-label">nNeighbors <span id="nNeighborsValue">15</span></label>
+              <div class="col">
+                <input type="range" class="form-range" min="0" max="50" step="1" value="15" id="nNeighbors">
+              </div>
+            </div>
+            <div class="row">
+              <span class="fw-bolder text-center">keys</span>
+            </div>
+            <div class="mb-1 row">
+              <a for="apikey" class="col-sm-3 col-form-label" href="https://platform.openai.com/api-keys" target="_blank">openAI api key</a>
+              <div class="col input-group">
+                <input class="form-control" id="apikey" placeholder="key" type="password">
+                <button class="btn btn-outline-secondary" type="button" id="savekey">save</button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="csvModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5">load csv</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="list-group csvLoad" id="drop-area">
+              <file-drop accept="text/csv">
+                <label for="csvTextarea" class="form-label">csv input:</label>
+              </file-drop>
+              <input class="form-control form-control-sm" type="file" id="fileInput" name="fileInput" accept="text/csv">
+              <div class="d-grid gap-2">
+                <button id="loadCSVBtn" class="btn btn-primary" type="button">load</button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="jsonModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5">load embeddings json</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="list-group csvLoad" id="drop-area-json">
+              <file-drop accept="text/json">
+                <label for="jsonTextarea" class="form-label">json input:</label>
+              </file-drop>
+              <input class="form-control form-control-sm" type="file" id="jsonFileInput" name="jsonFileInput" accept="application/json">
+              <div class="d-grid gap-2">
+                <button id="loadJsonBtn" class="btn btn-primary" type="button">load</button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasMenu">
+      <div class="offcanvas-header">
+        <h5 id="offcanvasTopLabel">menu</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+
+        <div class="input-group mb-2">
+          <a id="config" class="link-underline-light" data-bs-toggle="modal" data-bs-target="#configModal">Configuration</a>
+        </div>
+        <div class="input-group mb-2">
+          <a id="csv" class="link-underline-light" data-bs-toggle="modal" data-bs-target="#csvModal">CSV</a>
+        </div>
+        <div class="input-group mb-2">
+          <a id="json" class="link-underline-light" data-bs-toggle="modal" data-bs-target="#jsonModal">JSON</a>
+        </div>
+        <div class="d-grid mb-2">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="activeBrush">
+            <label class="form-check-label" for="flexCheckDefault">
+              select points mode
+            </label>
+          </div>
+        </div>
+        <div class="d-grid mb-2">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="activeTooltip">
+            <label class="form-check-label" for="flexCheckDefault">
+              tooltip
+            </label>
+          </div>
+        </div>
+        <div class="d-grid mb-2">
+          <button id="resetZoom" type="button" class="btn btn-primary" data-bs-dismiss="offcanvas" aria-label="load filters">reset zoom</button>
+        </div>
+        <div class="mb-2 input-group">
+          <input type="text" class="form-control" placeholder="url regex" id="urlRegex">
+          <input type="color" class="form-control form-control-color" id="urlRegexColor" value="#E20074" title="Choose your color">
+          <button class="btn btn-outline-secondary" type="button" id="urlRegexBtn">add</button>
+        </div>
+        <div id="markedPoints" class="d-grid mb-2 list-group">
+        </div>
+        <div class="input-group mb-2">
+          <select id="cluster" class="form-select">
+          </select>
+        </div>
+        <div class="d-grid mb-2">
+          <button id="colorClusters" type="button" class="btn btn-primary" data-bs-dismiss="offcanvas">colors clusters</button>
+        </div>
+        <div class="d-grid mb-2">
+          <button id="regenerateMap" type="button" class="btn btn-info" data-bs-dismiss="offcanvas">regenerate map</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title">cluster: <span id="offcanvasRightLabel"></span></h5>
+        <button id="closeRelated" type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+      </div>
+      <div class="offcanvas-body">
+        <div class="accordion" id="accordionRelated"></div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/umap-js.min.js"></script>
+    <script type="module" src="/js/d3.v6.min.js"></script>
+    <script type="module" src="/js/imports.js"></script>
+
+    <script src="/js/jDBScan.js"></script>
+
+    <script src="/js/jquery-3.6.0.min.js"></script>
+    <script src="/js/bootstrap.bundle.v5.2.0.min.js"></script>
+
+    <script src="/js/tableExport.min.v1.22.0.js"></script>
+    <script src="/js/bootstrap-table.min.v1.21.1.js"></script>
+    <script src="/js/bootstrap-table-export.min.js"></script>
+    <script src="/js/papaparse.v5.4.1.min.js"></script>
+
+    <script src="/js/handlebars.min-v4.7.8.js"></script>
+    <script src="/js/tooltipTemplate.precompiled.js"></script>
+    <script src="/js/accordionTemplate2.precompiled.js"></script>
+
+    <script src="/js/kw-map.js"></script>
+
+  </body>
+</html>
