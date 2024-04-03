@@ -1,262 +1,548 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0" />
-    <meta name="referrer" content="none" />
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, user-scalable=0"
+        />
+        <meta name="referrer" content="none" />
 
-    <title>blue dragon crawler</title>
+        <title>blue dragon crawler</title>
 
-    <link rel="stylesheet" href="/css/bootstrap.v5.2.0.min.css"/>
-    <link rel="stylesheet" href="/bootstrap-icons-1.8.1/bootstrap-icons.css" />
-    <link rel="stylesheet" href="/css/bootstrap-table.min.v1.21.1.css"/>
+        <link rel="stylesheet" href="/css/bootstrap.v5.2.0.min.css" />
+        <link
+            rel="stylesheet"
+            href="/bootstrap-icons-1.8.1/bootstrap-icons.css"
+        />
+        <link rel="stylesheet" href="/css/bootstrap-table.min.v1.21.1.css" />
+    </head>
 
-  </head>
-
-  <body>
-    <nav class="navbar navbar-expand-sm bg-light">
-      <div class="container-fluid">
-        <span class="navbar-brand">
-          <img src="/icons/dragon128.png" alt="blue dragon" width="32" height="32" class="d-inline-block align-text-bottom">
-        </span>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav">
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" ole="button" data-bs-toggle="dropdown">
-                Crawls
-              </a>
-              <ul class="dropdown-menu">
-                <li><a id="save" class="dropdown-item">save current</a></li>
-                <li><a id="load" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#loadModal">load</a></li>
-              </ul>
-            </li>
-            <li class="nav-item">
-              <a id="config" class="nav-link" data-bs-toggle="modal" data-bs-target="#configModal">Configuration</a>
-            </li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" ole="button" data-bs-toggle="dropdown">
-                URLs
-              </a>
-              <ul class="dropdown-menu">
-                <li><a id="csv" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#csvModal">CSV</a></li>
-                <li><a id="sitemap" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#sitemapModal">sitemap</a></li>
-              </ul>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
-    <div class="container my-2">
-      <div class="row mb-2">
-        <div class="progress px-0">
-          <div id="progress" class="progress-bar" role="progressbar" style="width: 0%;">-</div>
-        </div>
-      </div>
-      <div class="row mb-2">
-        <div class="input-group px-0">
-          <input id="spiderURL" type="text" class="form-control" placeholder="enter source URL to fetch URL list from">
-          <button class="btn btn-outline-primary" type="button" id="spiderBtn">fetch</button>
-        </div>
-      </div>
-      <div class="row mt-1">
-        <label for="urlListTextarea" class="form-label px-0">or enter URL list:</label>
-        <textarea class="form-control" id="urlListTextarea" rows="10" placeholder="input URLs here line by line"></textarea>
-        <div class="input-group mb-1 px-0">
-          <input id="regexFilter" type="text" class="form-control" placeholder="regex to filter url list">
-          <div class="btn-group">
-            <button class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" type="button">regex</button>
-            <ul id="predefinedRegex" class="dropdown-menu">
-              <li><a class="dropdown-item" data-regex="[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$">uuid</a></li>
-              <li><a class="dropdown-item" data-regex="\/$">ends with slash</a></li>
-              <li><a class="dropdown-item" data-regex="\.html$">ends with .html</a></li>
-            </ul>
-          </div>
-          <div class="btn-group">
-            <button class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" type="button">filter</button>
-            <ul id="regexFilterBtn" class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" data-type="include">include</a></li>
-              <li><a class="dropdown-item" data-type="exclude">exclude</a></li>
-            </ul>
-          </div>
-        </div>
-        <button class="btn btn-outline-primary" type="button" id="crawlBtn">crawl</button>
-      </div>
-      <div class="row">
-        <table id="jsonTable"
-          data-show-refresh="false"
-          data-search="true"
-          data-pagination="true"
-          data-page-size="1000"
-	        data-show-export="true"
-	        data-show-columns="true">
-        </table>
-      </div>
-    </div><!-- /.container -->
-
-    <div class="modal fade" id="loadModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h1 class="modal-title fs-5" id="loadModalLabel">load crawl</h1>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="list-group crawlLoad">
-            </div>
-          </div>
-          <div class="modal-footer">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal fade" id="configModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h1 class="modal-title fs-5" id="configModalLabel">crawl configuration</h1>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="mb-1 row">
-              <label for="maxRetries" class="col-sm-3 col-form-label">max retries <span id="maxRetriesValue">0</span></label>
-              <div class="col">
-                <input type="range" class="form-range" min="0" max="3" step="1" value="0" id="maxRetries">
-              </div>
-            </div>
-            <div class="mb-1 row">
-              <label for="delay" class="col-sm-3 col-form-label">crawl delay <span id="delayValue">0</span>ms</label>
-              <div class="col">
-                <input type="range" class="form-range" min="0" max="3000" step="1" value="0" id="delay">
-              </div>
-            </div>
-            <div class="mb-1 row">
-              <label for="maxConnections" class="col-sm-3 col-form-label">max connections <span id="maxConnectionsValue">60</span></label>
-              <div class="col">
-                <input type="range" class="form-range" min="1" max="60" step="1" value="60" id="maxConnections">
-              </div>
-            </div>
-            <div class="mb-1 row">
-              <label class="col-sm-3 form-check-label" for="stayonhostname">stay on hostname</label>
-              <div class="col">
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" role="switch" id="stayonhostname">
+    <body>
+        <nav class="navbar navbar-expand-sm bg-light">
+            <div class="container-fluid">
+                <span class="navbar-brand">
+                    <img
+                        src="/icons/dragon128.png"
+                        alt="blue dragon"
+                        width="32"
+                        height="32"
+                        class="d-inline-block align-text-bottom"
+                    />
+                </span>
+                <div class="navbar-collapse collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item dropdown">
+                            <a
+                                class="nav-link dropdown-toggle"
+                                ole="button"
+                                data-bs-toggle="dropdown"
+                            >
+                                Crawls
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a id="save" class="dropdown-item"
+                                        >save current</a
+                                    >
+                                </li>
+                                <li>
+                                    <a
+                                        id="load"
+                                        class="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#loadModal"
+                                        >load</a
+                                    >
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a
+                                id="config"
+                                class="nav-link"
+                                data-bs-toggle="modal"
+                                data-bs-target="#configModal"
+                                >Configuration</a
+                            >
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a
+                                class="nav-link dropdown-toggle"
+                                ole="button"
+                                data-bs-toggle="dropdown"
+                            >
+                                URLs
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a
+                                        id="csv"
+                                        class="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#csvModal"
+                                        >CSV</a
+                                    >
+                                </li>
+                                <li>
+                                    <a
+                                        id="sitemap"
+                                        class="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#sitemapModal"
+                                        >sitemap</a
+                                    >
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
                 </div>
-              </div>
             </div>
-            <div class="mb-1 row">
-              <label for="credentials" class="col-sm-3 col-form-label"><a href="https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials" target="_blank">credentials</a></label>
-              <div class="col">
-                <select class="form-select" id="credentials">
-                  <option value="omit">omit (no cookies, basic http auth, …)</option>
-                  <option value="same-origin">same-origin (cookies, basic http auth, …)</option>
-                  <option value="include">include (alway cookies, basic http auth, …)</option>
-                </select>
-              </div>
-            </div>
-            <div class="mb-1 row">
-              <label for="cache" class="col-sm-3 col-form-label"><a href="https://developer.mozilla.org/en-US/docs/Web/API/Request/cache" target="_blank">cache</a></label>
-              <div class="col">
-                <select class="form-select" id="cache">
-                  <option value="no-store">no-store (fetch always, no cache update)</option>
-                  <option value="reload">reload (fetch always, but update cache)</option>
-                  <option value="default">default (fetch default)</option>
-                  <option value="force-cache">force-cache (get cache, even if stale)</option>
-                  <option value="only-if-cached">only-if-cached (504 if not cached, works only with "same-origin")</option>
-                </select>
-              </div>
-            </div>
-            <div class="mb-1 row">
-              <label for="charset" class="col-sm-3 col-form-label">document charset</label>
-              <div class="col">
-                <input class="form-control" list="charsetOptions" id="charset" placeholder="enter any charset or select" value="utf-8">
-                <datalist id="charsetOptions">
-                  <option value="utf-8">
-                  <option value="iso-8859-1">
-                </datalist>
-              </div>
-            </div>
-            <div class="mb-1 row">
-              <label class="col-sm-3 form-check-label" for="readability">extract text</label>
-              <div class="col">
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" role="switch" id="readability">
+        </nav>
+        <div class="container my-2">
+            <div class="row mb-2">
+                <div class="progress px-0">
+                    <div
+                        id="progress"
+                        class="progress-bar"
+                        role="progressbar"
+                        style="width: 0%"
+                    >
+                        -
+                    </div>
                 </div>
-              </div>
             </div>
-          </div>
-          <div class="modal-footer">
-          </div>
+            <div class="row mb-2">
+                <div class="input-group px-0">
+                    <input
+                        id="spiderURL"
+                        type="text"
+                        class="form-control"
+                        placeholder="enter source URL to fetch URL list from"
+                    />
+                    <button
+                        class="btn btn-outline-primary"
+                        type="button"
+                        id="spiderBtn"
+                    >
+                        fetch
+                    </button>
+                </div>
+            </div>
+            <div class="row mt-1">
+                <label for="urlListTextarea" class="form-label px-0"
+                    >or enter URL list:</label
+                >
+                <textarea
+                    class="form-control"
+                    id="urlListTextarea"
+                    rows="10"
+                    placeholder="input URLs here line by line"
+                ></textarea>
+                <div class="input-group mb-1 px-0">
+                    <input
+                        id="regexFilter"
+                        type="text"
+                        class="form-control"
+                        placeholder="regex to filter url list"
+                    />
+                    <div class="btn-group">
+                        <button
+                            class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split"
+                            data-bs-toggle="dropdown"
+                            type="button"
+                        >
+                            regex
+                        </button>
+                        <ul id="predefinedRegex" class="dropdown-menu">
+                            <li>
+                                <a
+                                    class="dropdown-item"
+                                    data-regex="[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                                    >uuid</a
+                                >
+                            </li>
+                            <li>
+                                <a class="dropdown-item" data-regex="\/$"
+                                    >ends with slash</a
+                                >
+                            </li>
+                            <li>
+                                <a class="dropdown-item" data-regex="\.html$"
+                                    >ends with .html</a
+                                >
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="btn-group">
+                        <button
+                            class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split"
+                            data-bs-toggle="dropdown"
+                            type="button"
+                        >
+                            filter
+                        </button>
+                        <ul
+                            id="regexFilterBtn"
+                            class="dropdown-menu dropdown-menu-end"
+                        >
+                            <li>
+                                <a class="dropdown-item" data-type="include"
+                                    >include</a
+                                >
+                            </li>
+                            <li>
+                                <a class="dropdown-item" data-type="exclude"
+                                    >exclude</a
+                                >
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <button
+                    class="btn btn-outline-primary"
+                    type="button"
+                    id="crawlBtn"
+                >
+                    crawl
+                </button>
+            </div>
+            <div class="row">
+                <table
+                    id="jsonTable"
+                    data-show-refresh="false"
+                    data-search="true"
+                    data-pagination="true"
+                    data-page-size="All"
+                    data-page-list="[All, 1000]"
+                    data-show-export="true"
+                    data-show-columns="true"
+                ></table>
+            </div>
         </div>
-      </div>
-    </div>
+        <!-- /.container -->
 
-    <div class="modal fade" id="csvModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h1 class="modal-title fs-5">load csv</h1>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="list-group csvLoad" id="drop-area">
-              <file-drop accept="text/csv">
-                <label for="csvTextarea" class="form-label">csv input:</label>
-              </file-drop>
-              <input class="form-control form-control-sm" type="file" id="fileInput" name="fileInput" accept="text/csv">
-              <div class="d-grid gap-2">
-                <button id="loadCSVBtn" class="btn btn-primary" type="button">load</button>
-              </div>
+        <div class="modal fade" id="loadModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="loadModalLabel">
+                            load crawl
+                        </h1>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="list-group crawlLoad"></div>
+                    </div>
+                    <div class="modal-footer"></div>
+                </div>
             </div>
-          </div>
-          <div class="modal-footer">
-          </div>
         </div>
-      </div>
-    </div>
 
-    <div class="modal fade" id="sitemapModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h1 class="modal-title fs-5">load sitemap</h1>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div class="list-group mb-2" id="drop-area">
-              <file-drop accept="application/xml">
-                <label for="csvTextarea" class="form-label">sitemaps input</label>
-              </file-drop>
-              <input class="form-control form-control-sm" type="file" id="fileInput" name="fileInput" accept="application/xml">
+        <div class="modal fade" id="configModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="configModalLabel">
+                            crawl configuration
+                        </h1>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row mb-1">
+                            <label
+                                for="maxRetries"
+                                class="col-sm-3 col-form-label"
+                                >max retries
+                                <span id="maxRetriesValue">0</span></label
+                            >
+                            <div class="col">
+                                <input
+                                    type="range"
+                                    class="form-range"
+                                    min="0"
+                                    max="3"
+                                    step="1"
+                                    value="0"
+                                    id="maxRetries"
+                                />
+                            </div>
+                        </div>
+                        <div class="row mb-1">
+                            <label for="delay" class="col-sm-3 col-form-label"
+                                >crawl delay
+                                <span id="delayValue">0</span>ms</label
+                            >
+                            <div class="col">
+                                <input
+                                    type="range"
+                                    class="form-range"
+                                    min="0"
+                                    max="3000"
+                                    step="1"
+                                    value="288"
+                                    id="delay"
+                                />
+                            </div>
+                        </div>
+                        <div class="row mb-1">
+                            <label
+                                for="maxConnections"
+                                class="col-sm-3 col-form-label"
+                                >max connections
+                                <span id="maxConnectionsValue">60</span></label
+                            >
+                            <div class="col">
+                                <input
+                                    type="range"
+                                    class="form-range"
+                                    min="1"
+                                    max="60"
+                                    step="1"
+                                    value="20"
+                                    id="maxConnections"
+                                />
+                            </div>
+                        </div>
+                        <div class="row mb-1">
+                            <label
+                                class="col-sm-3 form-check-label"
+                                for="stayonhostname"
+                                >stay on hostname</label
+                            >
+                            <div class="col">
+                                <div class="form-check form-switch">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        role="switch"
+                                        id="stayonhostname"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-1">
+                            <label
+                                for="credentials"
+                                class="col-sm-3 col-form-label"
+                                ><a
+                                    href="https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials"
+                                    target="_blank"
+                                    >credentials</a
+                                ></label
+                            >
+                            <div class="col">
+                                <select class="form-select" id="credentials">
+                                    <option value="omit">
+                                        omit (no cookies, basic http auth, …)
+                                    </option>
+                                    <option value="same-origin">
+                                        same-origin (cookies, basic http auth,
+                                        …)
+                                    </option>
+                                    <option value="include">
+                                        include (alway cookies, basic http auth,
+                                        …)
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-1">
+                            <label for="cache" class="col-sm-3 col-form-label"
+                                ><a
+                                    href="https://developer.mozilla.org/en-US/docs/Web/API/Request/cache"
+                                    target="_blank"
+                                    >cache</a
+                                ></label
+                            >
+                            <div class="col">
+                                <select class="form-select" id="cache">
+                                    <option value="no-store">
+                                        no-store (fetch always, no cache update)
+                                    </option>
+                                    <option value="reload">
+                                        reload (fetch always, but update cache)
+                                    </option>
+                                    <option value="default">
+                                        default (fetch default)
+                                    </option>
+                                    <option value="force-cache">
+                                        force-cache (get cache, even if stale)
+                                    </option>
+                                    <option value="only-if-cached">
+                                        only-if-cached (504 if not cached, works
+                                        only with "same-origin")
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-1">
+                            <label for="charset" class="col-sm-3 col-form-label"
+                                >document charset</label
+                            >
+                            <div class="col">
+                                <input
+                                    class="form-control"
+                                    list="charsetOptions"
+                                    id="charset"
+                                    placeholder="enter any charset or select"
+                                    value="utf-8"
+                                />
+                                <datalist id="charsetOptions">
+                                    <option value="utf-8"></option>
+                                    <option value="iso-8859-1"></option>
+                                </datalist>
+                            </div>
+                        </div>
+                        <div class="row mb-1">
+                            <label
+                                class="col-sm-3 form-check-label"
+                                for="readability"
+                                >extract text</label
+                            >
+                            <div class="col">
+                                <div class="form-check form-switch">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        role="switch"
+                                        id="readability"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer"></div>
+                </div>
             </div>
-            <div class="mb-2">
-              <span>or</span>
-            </div>
-            <div class="list-group mb-2">
-              <input class="form-control form-control-sm" id="sitemapUrlInput" name="sitemapUrlInput" placeholder="https://...xml">
-            </div>
-            <div class="d-grid gap-2">
-              <button id="loadSitemapBtn" class="btn btn-primary" type="button">load</button>
-            </div>
-          </div>
-          <div class="modal-footer">
-          </div>
         </div>
-      </div>
-    </div>
 
-    <script type="text/javascript" src="/js/jquery-3.6.0.min.js"></script>
-    <script type="text/javascript" src="/js/bootstrap.bundle.v5.2.0.min.js"></script>
+        <div class="modal fade" id="csvModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">load csv</h1>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="list-group csvLoad" id="drop-area">
+                            <file-drop accept="text/csv">
+                                <label for="csvTextarea" class="form-label"
+                                    >csv input:</label
+                                >
+                            </file-drop>
+                            <input
+                                class="form-control form-control-sm"
+                                type="file"
+                                id="fileInput"
+                                name="fileInput"
+                                accept="text/csv"
+                            />
+                            <div class="d-grid gap-2">
+                                <button
+                                    id="loadCSVBtn"
+                                    class="btn btn-primary"
+                                    type="button"
+                                >
+                                    load
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer"></div>
+                </div>
+            </div>
+        </div>
 
-    <script type="text/javascript" src="/js/xlsx.core.min.js"></script>
-    <script type="text/javascript" src="/js/tableExport.min.v1.22.0.js"></script>
-    <script type="text/javascript" src="/js/bootstrap-table.min.v1.21.1.js"></script>
-    <script type="text/javascript" src="/js/bootstrap-table-export.min.js"></script>
-    <script type="text/javascript" src="/js/papaparse.v5.4.1.min.js"></script>
+        <div class="modal fade" id="sitemapModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">load sitemap</h1>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="list-group mb-2" id="drop-area">
+                            <file-drop accept="application/xml">
+                                <label for="csvTextarea" class="form-label"
+                                    >sitemaps input</label
+                                >
+                            </file-drop>
+                            <input
+                                class="form-control form-control-sm"
+                                type="file"
+                                id="fileInput"
+                                name="fileInput"
+                                accept="application/xml"
+                            />
+                        </div>
+                        <div class="mb-2">
+                            <span>or</span>
+                        </div>
+                        <div class="list-group mb-2">
+                            <input
+                                class="form-control form-control-sm"
+                                id="sitemapUrlInput"
+                                name="sitemapUrlInput"
+                                placeholder="https://...xml"
+                            />
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button
+                                id="loadSitemapBtn"
+                                class="btn btn-primary"
+                                type="button"
+                            >
+                                load
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer"></div>
+                </div>
+            </div>
+        </div>
 
-    <script type="text/javascript" src="/js/readability.js"></script>
+        <script type="text/javascript" src="/js/jquery-3.7.1.min.js"></script>
+        <script
+            type="text/javascript"
+            src="/js/bootstrap.bundle.v5.2.0.min.js"
+        ></script>
 
-    <script type="text/javascript" src="/js/dragon.js"></script>
+        <script
+            type="text/javascript"
+            src="/js/tableExport.min.v1.22.0.js"
+        ></script>
+        <script
+            type="text/javascript"
+            src="/js/bootstrap-table.min.v1.21.1.js"
+        ></script>
+        <script
+            type="text/javascript"
+            src="/js/bootstrap-table-export.min.js"
+        ></script>
+        <script
+            type="text/javascript"
+            src="/js/papaparse.v5.4.1.min.js"
+        ></script>
 
-  </body>
+        <script type="text/javascript" src="/js/readability.js"></script>
+
+        <script type="text/javascript" src="/js/dragon.js"></script>
+    </body>
 </html>

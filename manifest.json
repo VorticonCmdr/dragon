@@ -1,11 +1,9 @@
 {
-  "permissions": [
-    "storage",
-    "unlimitedStorage",
-    "webRequest"
-  ],
+  "permissions": ["storage", "unlimitedStorage", "webRequest"],
   "host_permissions": [
-    "<all_urls>"
+    "<all_urls>",
+    "http://localhost/*",
+    "http://localhost:11434/*"
   ],
   "background": {
     "service_worker": "js/background.js"
