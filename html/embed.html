@@ -8,9 +8,9 @@
         />
         <meta name="referrer" content="none" />
 
-        <title>blue dragon crawler</title>
+        <title>csv2embeddings</title>
 
-        <link rel="stylesheet" href="/css/bootstrap.v5.2.0.min.css" />
+        <link rel="stylesheet" href="/css/bootstrap.v5.3.min.css" />
         <link
             rel="stylesheet"
             href="/bootstrap-icons-1.8.1/bootstrap-icons.css"
@@ -38,14 +38,9 @@
                                 ole="button"
                                 data-bs-toggle="dropdown"
                             >
-                                Crawls
+                                Crawl
                             </a>
                             <ul class="dropdown-menu">
-                                <li>
-                                    <a id="save" class="dropdown-item"
-                                        >save current</a
-                                    >
-                                </li>
                                 <li>
                                     <a
                                         id="load"
@@ -53,15 +48,6 @@
                                         data-bs-toggle="modal"
                                         data-bs-target="#loadModal"
                                         >load</a
-                                    >
-                                </li>
-                                <li>
-                                    <a
-                                        id="delete"
-                                        class="dropdown-item"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#deleteModal"
-                                        >delete</a
                                     >
                                 </li>
                             </ul>
@@ -81,7 +67,7 @@
                                 ole="button"
                                 data-bs-toggle="dropdown"
                             >
-                                URLs
+                                Import
                             </a>
                             <ul class="dropdown-menu">
                                 <li>
@@ -93,23 +79,14 @@
                                         >CSV</a
                                     >
                                 </li>
-                                <li>
-                                    <a
-                                        id="sitemap"
-                                        class="dropdown-item"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#sitemapModal"
-                                        >sitemap</a
-                                    >
-                                </li>
                             </ul>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
-        <div class="container my-2">
-            <div class="row mb-2">
+        <div class="container-fluid my-2">
+            <div class="row mx-1 mb-2">
                 <div class="progress px-0">
                     <div
                         id="progress"
@@ -121,109 +98,13 @@
                     </div>
                 </div>
             </div>
-            <div class="row mb-2">
-                <div class="input-group px-0">
-                    <input
-                        id="spiderURL"
-                        type="text"
-                        class="form-control"
-                        placeholder="enter source URL to fetch URL list from"
-                    />
-                    <button
-                        class="btn btn-outline-primary"
-                        type="button"
-                        id="spiderBtn"
-                    >
-                        fetch
-                    </button>
-                </div>
-            </div>
-            <div class="row mt-1">
-                <label for="urlListTextarea" class="form-label px-0"
-                    >or enter URL list:</label
-                >
-                <textarea
-                    class="form-control"
-                    id="urlListTextarea"
-                    rows="10"
-                    placeholder="input URLs here line by line"
-                ></textarea>
-                <div class="input-group mb-1 px-0">
-                    <input
-                        id="regexFilter"
-                        type="text"
-                        class="form-control"
-                        placeholder="regex to filter url list"
-                    />
-                    <div class="btn-group">
-                        <button
-                            class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split"
-                            data-bs-toggle="dropdown"
-                            type="button"
-                        >
-                            regex
-                        </button>
-                        <ul id="predefinedRegex" class="dropdown-menu">
-                            <li>
-                                <a
-                                    class="dropdown-item"
-                                    data-regex="[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$"
-                                    >uuid</a
-                                >
-                            </li>
-                            <li>
-                                <a class="dropdown-item" data-regex="\/$"
-                                    >ends with slash</a
-                                >
-                            </li>
-                            <li>
-                                <a class="dropdown-item" data-regex="\.html$"
-                                    >ends with .html</a
-                                >
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="btn-group">
-                        <button
-                            class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split"
-                            data-bs-toggle="dropdown"
-                            type="button"
-                        >
-                            filter
-                        </button>
-                        <ul
-                            id="regexFilterBtn"
-                            class="dropdown-menu dropdown-menu-end"
-                        >
-                            <li>
-                                <a class="dropdown-item" data-type="include"
-                                    >include</a
-                                >
-                            </li>
-                            <li>
-                                <a class="dropdown-item" data-type="exclude"
-                                    >exclude</a
-                                >
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                <button
-                    class="btn btn-outline-primary"
-                    type="button"
-                    id="crawlBtn"
-                >
-                    crawl
-                </button>
-            </div>
             <div class="row">
                 <table
-                    id="jsonTable"
+                    id="table"
                     data-show-refresh="false"
                     data-search="true"
                     data-pagination="true"
-                    data-page-size="All"
-                    data-page-list="[All, 1000]"
+                    data-page-list="[10, 1000, All]"
                     data-show-export="true"
                     data-show-columns="true"
                 ></table>
@@ -246,27 +127,6 @@
                     </div>
                     <div class="modal-body">
                         <div class="list-group crawlLoad"></div>
-                    </div>
-                    <div class="modal-footer"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal fade" id="deleteModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="deleteModalLabel">
-                            delete crawl
-                        </h1>
-                        <button
-                            type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                        ></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="list-group crawlDelete"></div>
                     </div>
                     <div class="modal-footer"></div>
                 </div>
@@ -318,7 +178,7 @@
                                     min="0"
                                     max="3000"
                                     step="1"
-                                    value="288"
+                                    value="0"
                                     id="delay"
                                 />
                             </div>
@@ -337,7 +197,7 @@
                                     min="1"
                                     max="60"
                                     step="1"
-                                    value="20"
+                                    value="60"
                                     id="maxConnections"
                                 />
                             </div>
@@ -480,15 +340,6 @@
                                 name="fileInput"
                                 accept="text/csv"
                             />
-                            <div class="d-grid gap-2">
-                                <button
-                                    id="loadCSVBtn"
-                                    class="btn btn-primary"
-                                    type="button"
-                                >
-                                    load
-                                </button>
-                            </div>
                         </div>
                     </div>
                     <div class="modal-footer"></div>
@@ -496,62 +347,15 @@
             </div>
         </div>
 
-        <div class="modal fade" id="sitemapModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h1 class="modal-title fs-5">load sitemap</h1>
-                        <button
-                            type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                        ></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="list-group mb-2" id="drop-area">
-                            <file-drop accept="application/xml">
-                                <label for="csvTextarea" class="form-label"
-                                    >sitemaps input</label
-                                >
-                            </file-drop>
-                            <input
-                                class="form-control form-control-sm"
-                                type="file"
-                                id="fileInput"
-                                name="fileInput"
-                                accept="application/xml"
-                            />
-                        </div>
-                        <div class="mb-2">
-                            <span>or</span>
-                        </div>
-                        <div class="list-group mb-2">
-                            <input
-                                class="form-control form-control-sm"
-                                id="sitemapUrlInput"
-                                name="sitemapUrlInput"
-                                placeholder="https://...xml"
-                            />
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button
-                                id="loadSitemapBtn"
-                                class="btn btn-primary"
-                                type="button"
-                            >
-                                load
-                            </button>
-                        </div>
-                    </div>
-                    <div class="modal-footer"></div>
-                </div>
-            </div>
-        </div>
+        <script type="module" src="/js/umap-js.min.js"></script>
+        <script type="module" src="/js/hclust.js"></script>
+        <script type="module" src="/js/embed-imports.js"></script>
+        <script src="/js/jDBScan.js"></script>
 
         <script type="text/javascript" src="/js/jquery-3.7.1.min.js"></script>
         <script
             type="text/javascript"
-            src="/js/bootstrap.bundle.v5.2.0.min.js"
+            src="/js/bootstrap.bundle.v5.3.min.js"
         ></script>
 
         <script
@@ -571,8 +375,6 @@
             src="/js/papaparse.v5.4.1.min.js"
         ></script>
 
-        <script type="text/javascript" src="/js/readability.js"></script>
-
-        <script type="text/javascript" src="/js/dragon.js"></script>
+        <script type="text/javascript" src="/js/embed.js"></script>
     </body>
 </html>

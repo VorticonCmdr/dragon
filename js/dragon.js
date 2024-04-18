@@ -25,6 +25,9 @@ let crawl = {
     credentials: "omit", // omit cookies …
     cache: "no-store", // always fetch a fresh copy
   },
+  csv: {
+    data: {},
+  },
 };
 
 let $urlListTextarea = $("#urlListTextarea");
@@ -106,6 +109,10 @@ function init() {
   $("#save").on("click", saveCrawl);
 
   $(".crawlLoad").on("click", "button", loadCrawl);
+
+  $(".crawlDelete").on("click", "button", deleteCrawl);
+
+  $("#delete").on("click", listCrawlsToDelete);
 
   $("#maxRetries").on("change", function () {
     crawl.settings.maxRetries = parseInt($(this).val());
@@ -534,7 +541,7 @@ function dict2flatarray(dict) {
   return dict;
 }
 
-function getCrawlList() {
+async function getCrawlList() {
   chrome.storage.local.get("crawlList", function (data) {
     $(".crawlLoad").empty();
     if (!data.crawlList) {
@@ -613,19 +620,74 @@ function saveCrawl() {
   });
 }
 
-function parseData() {
-  // flatten crawl results data
-  let dataArray = JSON.parse(JSON.stringify(Object.values(crawl.data.results)));
-  dataArray.forEach((dict, i) => {
-    dict2flatarray(dict);
+function listCrawlsToDelete() {
+  chrome.storage.local.get("crawlList", function (data) {
+    $(".crawlDelete").empty();
+    if (!data.crawlList) {
+      return;
+    }
+    Object.entries(data?.crawlList).forEach(([key, value], i) => {
+      $(".crawlDelete").append(
+        `<button type="button" class="list-group-item list-group-item-action list-group-item-danger" data-crawlid="${key}">${value.name || key}</button>`,
+      );
+    });
   });
+}
 
+function deleteCrawl() {
+  let id = $(this).data("crawlid");
+  chrome.storage.local.remove([id], function () {
+    var error = chrome.runtime.lastError;
+    if (error) {
+      console.error(error);
+      return;
+    }
+    chrome.storage.local.get("crawlList", function (items) {
+      let data = {
+        crawlList: items["crawlList"] || {},
+      };
+      delete data["crawlList"][id];
+      chrome.storage.local.set(data).then(() => {
+        console.log(`list saved`);
+      });
+    });
+  });
+}
+
+function addCSVdata(dict) {
+  Object.entries(dict).forEach(([key, value]) => {
+    if (typeof value == "object") {
+      Object.keys(value).forEach((item) => {
+        if (typeof value[item] == "object") {
+          delete value[item];
+        } else {
+          dict[`${key}_${item}`] = value[item];
+        }
+      });
+      delete dict[key];
+    }
+  });
+  return dict;
+}
+
+function isNumber(str) {
+  if (!isNaN(str)) {
+    let num = parseFloat(str);
+    if (num % 1 === 0) {
+      return parseInt(str);
+    }
+    return num;
+  }
+  return str;
+}
+
+function parseData() {
   let columns = [
     {
       field: "href",
       title: "href",
       sortable: true,
-      visible: false,
+      visible: true,
       align: "left",
     },
     {
@@ -782,6 +844,20 @@ function parseData() {
       visible: false,
       align: "left",
     },
+    {
+      field: "clicks",
+      title: "clicks",
+      sortable: true,
+      visible: true,
+      align: "right",
+    },
+    {
+      field: "impressions",
+      title: "impressions",
+      sortable: true,
+      visible: true,
+      align: "right",
+    },
   ];
   let performance = [
     {
@@ -919,16 +995,16 @@ function parseData() {
     },
   ];
 
-  /*columns = [];
-  Object.keys(dataArray[0]).forEach((key, i) => {
-    columns.push({
-      field: key,
-      title: key,
-      sortable: true,
-      align: Number.isInteger(dataArray[0][key]) ? 'right' : 'left'
+  // flatten crawl results data
+  let dataArray = JSON.parse(JSON.stringify(Object.values(crawl.data.results)));
+  dataArray.forEach((dict, i) => {
+    dict2flatarray(dict);
+
+    Object.entries(crawl.csv.data[dict.href]).forEach((kv) => {
+      dict[kv[0].toLowerCase()] = isNumber(kv[1]);
     });
   });
-  */
+  crawl.data.results = dataArray;
 
   $("#jsonTable")
     .bootstrapTable("destroy")
@@ -936,7 +1012,7 @@ function parseData() {
       exportTypes: ["csv"],
       exportDataType: "all",
       columns: columns,
-      data: dataArray,
+      data: crawl.data.results,
     });
 }
 
@@ -1054,5 +1130,6 @@ function parseActivitiesData(textData) {
       return;
     }
     urlsTxt += `${url}\n`;
+    crawl.csv.data[url] = item;
   });
 }
