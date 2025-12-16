@@ -30,6 +30,11 @@ let crawl = {
   },
 };
 
+let chunker = new HtmlChunker({
+  maxWordsPerAggregatePassage: 30,
+  greedilyAggregateSiblingNodes: false,
+});
+
 let $urlListTextarea = $("#urlListTextarea");
 
 function mergeObjects(target, source) {
@@ -303,6 +308,9 @@ function processPage(html, href) {
       });
       let reader = new Readability(doc).parse();
       metadata["content"] = reader.textContent;
+      metadata["html"] = reader.content;
+      let chunks = chunker.chunk(metadata.html);
+      console.log(chunks);
 
       let extract = parser.parseFromString(reader.content, "text/html");
       metadata["paragraphs"] = [];
@@ -378,12 +386,32 @@ function getArticleSchema(doc) {
       } else {
         schemaData["authors"] = authors?.name;
       }
+      if (!schemaData["authors"]?.length) {
+        schemaData["authors"] = extractAuthors(schemaObj).join(", ");
+      }
     });
   } catch (error) {
-    console.log(`${error.message}: ${doc.URL}`);
+    console.error(`${error.message}: ${doc.URL}`);
   }
 
   return schemaData;
+}
+
+function extractAuthors(data) {
+  const authors = [];
+
+  // Check if @graph exists and is an array
+  if (Array.isArray(data["@graph"])) {
+    // Loop through each item in the @graph array
+    data["@graph"].forEach((item) => {
+      // Check if the item is of type Person and has a name property
+      if (item["@type"] === "Person" && item.name) {
+        authors.push(item.name);
+      }
+    });
+  }
+
+  return authors;
 }
 
 const sleep = (time) => new Promise((res) => setTimeout(res, time, time));
@@ -487,7 +515,7 @@ async function processQueue() {
         process();
       })
       .catch((error) => {
-        console.error(error.message);
+        //console.error(error.message);
         process();
       });
   }
@@ -820,7 +848,7 @@ function parseData() {
       field: "schema_authors",
       title: "schema_authors",
       sortable: true,
-      visible: false,
+      visible: true,
       align: "left",
     },
     {
@@ -848,14 +876,14 @@ function parseData() {
       field: "clicks",
       title: "clicks",
       sortable: true,
-      visible: true,
+      visible: false,
       align: "right",
     },
     {
       field: "impressions",
       title: "impressions",
       sortable: true,
-      visible: true,
+      visible: false,
       align: "right",
     },
   ];
@@ -998,11 +1026,13 @@ function parseData() {
   // flatten crawl results data
   let dataArray = JSON.parse(JSON.stringify(Object.values(crawl.data.results)));
   dataArray.forEach((dict, i) => {
-    dict2flatarray(dict);
+    dict = dict2flatarray(dict);
 
+    /*
     Object.entries(crawl.csv.data[dict.href]).forEach((kv) => {
       dict[kv[0].toLowerCase()] = isNumber(kv[1]);
     });
+     */
   });
   crawl.data.results = dataArray;
 
@@ -1070,10 +1100,92 @@ async function getSitemap(link) {
   }
 
   let xmlDoc = parseXMLSitemap(content);
+
+  /*
+  let cutoffDate = new Date("2024-06-01T00:00:00Z");
+  let result = filterUrlsByDate(xmlDoc, cutoffDate);
+  console.log(result);
+
+
+  let arr = extractUrlsAndDates(xmlDoc);
+  let agg = aggregateUrlsByYearMonth(arr);
+  console.log(agg);
+  */
+
   let locations = xmlDoc.getElementsByTagName("loc");
   [...locations].forEach((loc, i) => {
     $urlListTextarea.append(`${loc.textContent}\n`);
   });
+}
+
+function filterUrlsByDate(xmlDoc, cutoffDate) {
+  var urlElements = xmlDoc.getElementsByTagName("url");
+  var result = [];
+
+  for (var i = 0; i < urlElements.length; i++) {
+    var urlElement = urlElements[i];
+    var locElement = urlElement.getElementsByTagName("loc")[0];
+    var lastmodElement = urlElement.getElementsByTagName("lastmod")[0];
+
+    if (locElement && lastmodElement) {
+      var url = locElement.textContent;
+      var lastmod = lastmodElement.textContent;
+      var date = new Date(lastmod);
+
+      if (date >= cutoffDate) {
+        result.push(url);
+      }
+    }
+  }
+
+  return result.join("\n");
+}
+
+function aggregateUrlsByYearMonth(urlData) {
+  var aggregation = {};
+
+  urlData.forEach(function (entry) {
+    var yearMonth = `${entry.year}-${String(entry.month).padStart(2, "0")}`;
+    if (!aggregation[yearMonth]) {
+      aggregation[yearMonth] = 0;
+    }
+    aggregation[yearMonth]++;
+  });
+
+  var result = Object.keys(aggregation).map(function (key) {
+    return { date: key, "url-count": aggregation[key] };
+  });
+
+  return result;
+}
+
+function extractUrlsAndDates(xmlDoc) {
+  var urlElements = xmlDoc.getElementsByTagName("url");
+  var result = [];
+
+  for (var i = 0; i < urlElements.length; i++) {
+    var urlElement = urlElements[i];
+    var locElement = urlElement.getElementsByTagName("loc")[0];
+    var lastmodElement = urlElement.getElementsByTagName("lastmod")[0];
+
+    if (locElement && lastmodElement) {
+      var url = locElement.textContent;
+      var lastmod = lastmodElement.textContent;
+      var date = new Date(lastmod);
+
+      var entry = {
+        url: url,
+        year: date.getUTCFullYear(),
+        month: date.getUTCMonth() + 1, // Months are zero-based
+        day: date.getUTCDate(),
+      };
+      entry["yearmonth"] = `${entry.year}-${entry.month}`;
+
+      result.push(entry);
+    }
+  }
+
+  return result;
 }
 
 function parseXMLSitemap(sitemapContent) {
