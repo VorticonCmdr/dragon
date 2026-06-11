@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="none" />
+    <title>blue dragon</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="bg-white text-slate-800 min-h-screen">
+
+    <!-- Navbar -->
+    <header class="border-b border-slate-200 bg-white px-4 py-2.5 flex items-center gap-5">
+      <img src="icons/dragon32.png" alt="blue dragon" class="w-6 h-6 shrink-0" />
+
+      <!-- Crawls dropdown -->
+      <div id="crawlsDropdown" class="relative">
+        <button data-menu="crawls-menu"
+          class="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 select-none cursor-pointer">
+          Crawls
+          <svg class="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <ul id="crawls-menu" class="dropdown-menu hidden absolute top-full left-0 mt-1 w-44 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1">
+          <li><button id="save"
+            class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">save current</button></li>
+          <li><button data-dialog="loadModal"
+            class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">load</button></li>
+          <li><button data-dialog="deleteModal"
+            class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">delete</button></li>
+        </ul>
+      </div>
+
+      <button data-dialog="configModal"
+        class="text-sm text-slate-600 hover:text-slate-900 cursor-pointer">Configuration</button>
+
+      <!-- URLs dropdown -->
+      <div id="urlsDropdown" class="relative">
+        <button data-menu="urls-menu"
+          class="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 select-none cursor-pointer">
+          URLs
+          <svg class="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <ul id="urls-menu" class="dropdown-menu hidden absolute top-full left-0 mt-1 w-36 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1">
+          <li><button data-dialog="csvModal"
+            class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">CSV</button></li>
+          <li><button data-dialog="sitemapModal"
+            class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">sitemap</button></li>
+        </ul>
+      </div>
+    </header>
+
+    <!-- Tab bar -->
+    <div class="border-b border-slate-200 bg-white px-4 flex">
+      <button data-tab="crawl"
+        class="tab-btn px-5 py-2.5 text-sm font-medium text-blue-600 border-b-2 border-blue-600 -mb-px">Crawl</button>
+      <button data-tab="schedules"
+        class="tab-btn px-5 py-2.5 text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px">Schedules</button>
+    </div>
+
+    <main class="max-w-screen-xl mx-auto px-4 py-4">
+      <div id="panelCrawl" class="space-y-3">
+
+      <!-- Progress bar -->
+      <div id="progressContainer" class="hidden h-5 w-full bg-slate-100 rounded overflow-hidden">
+        <div id="progress"
+          class="h-full bg-blue-500 text-xs text-white flex items-center px-2 transition-all duration-200"
+          style="width: 0%">–</div>
+      </div>
+
+      <!-- Spider URL -->
+      <div class="flex gap-2">
+        <input id="spiderURL" type="search"
+          placeholder="enter source URL to fetch URL list from"
+          class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        <button id="spiderBtn"
+          class="px-4 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50 shrink-0">fetch</button>
+      </div>
+
+      <!-- URL list -->
+      <div class="space-y-2">
+        <label for="urlListTextarea" class="text-xs text-slate-500">or enter URL list:</label>
+        <textarea id="urlListTextarea" rows="8"
+          placeholder="input URLs here line by line"
+          class="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+
+        <!-- Regex filter row -->
+        <div class="flex gap-2">
+          <input id="regexFilter" type="search"
+            placeholder="regex to filter URL list"
+            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+
+          <!-- Predefined regex -->
+          <div id="predefinedRegex" class="relative">
+            <button data-menu="regex-presets"
+              class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50 cursor-pointer">regex</button>
+            <ul id="regex-presets" class="dropdown-menu hidden absolute top-full right-0 mt-1 w-52 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1">
+              <li><button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                data-regex="[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$">uuid</button></li>
+              <li><button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                data-regex="\/$">ends with slash</button></li>
+              <li><button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                data-regex="\.html$">ends with .html</button></li>
+            </ul>
+          </div>
+
+          <!-- Filter include/exclude -->
+          <div id="regexFilterBtn" class="relative">
+            <button data-menu="filter-actions"
+              class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50 cursor-pointer">filter</button>
+            <ul id="filter-actions" class="dropdown-menu hidden absolute top-full right-0 mt-1 w-36 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1">
+              <li><button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                data-type="include">include</button></li>
+              <li><button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                data-type="exclude">exclude</button></li>
+            </ul>
+          </div>
+        </div>
+
+        <button id="crawlBtn"
+          class="w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">crawl</button>
+      </div>
+
+      <!-- Table toolbar -->
+      <div class="flex items-center gap-2 pt-1">
+        <input id="tableSearch" type="search" placeholder="search table…"
+          class="border border-slate-300 rounded px-3 py-1.5 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        <button id="exportCSVBtn"
+          class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50">export CSV</button>
+        <div class="relative">
+          <button id="columnsBtn"
+            class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50">columns</button>
+          <div id="columnsPanel"
+            class="hidden absolute left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-20 overflow-y-auto max-h-72 w-48 py-1">
+          </div>
+        </div>
+      </div>
+
+      <!-- Table container -->
+      <div id="jsonTable"></div>
+
+      </div><!-- /panelCrawl -->
+
+      <!-- Schedules panel -->
+      <div id="panelSchedules" class="hidden space-y-4 pt-2">
+
+        <!-- Add schedule form -->
+        <div class="border border-slate-200 rounded-lg p-4 space-y-4">
+          <p class="text-sm font-medium text-slate-700">New schedule</p>
+
+          <!-- Name template -->
+          <div>
+            <label class="text-xs text-slate-500 block mb-1">Name <span class="text-slate-400">({hostname} and {datetime} are replaced at crawl time)</span></label>
+            <input id="scheduleNameTemplate" type="search" value="{hostname} {datetime}"
+              class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          </div>
+
+          <!-- URL sources -->
+          <div class="space-y-2">
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide">URL sources</p>
+            <div>
+              <label class="text-xs text-slate-500 block mb-1">Spider URL <span class="text-slate-400">(crawls the page and all linked URLs)</span></label>
+              <input id="scheduleSpiderUrl" type="search" placeholder="https://example.com"
+                class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 block mb-1">URL list <span class="text-slate-400">(one URL per line)</span></label>
+              <textarea id="scheduleUrlList" rows="3"
+                placeholder="https://example.com/page-1&#10;https://example.com/page-2"
+                class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 block mb-1">Sitemap URL</label>
+              <input id="scheduleSitemapUrl" type="search" placeholder="https://example.com/sitemap.xml"
+                class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            </div>
+          </div>
+
+          <!-- Regex filter -->
+          <div class="space-y-1">
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide">Regex filter</p>
+            <div class="flex gap-2">
+              <input id="scheduleFilterRegex" type="search" placeholder="e.g. /product/"
+                class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <select id="scheduleFilterType"
+                class="border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">off</option>
+                <option value="include">include</option>
+                <option value="exclude">exclude</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Interval + submit -->
+          <div class="flex gap-2 items-center">
+            <span class="text-xs text-slate-500 shrink-0">every</span>
+            <input id="scheduleInterval" type="number" min="1" value="1"
+              class="w-16 border border-slate-300 rounded px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <select id="scheduleUnit"
+              class="border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="minutes">min</option>
+              <option value="hours" selected>h</option>
+              <option value="days">d</option>
+            </select>
+            <button id="addScheduleBtn"
+              class="ml-auto px-4 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 shrink-0">add</button>
+          </div>
+          <p class="text-xs text-slate-400">Min. interval: 1 minute · Crawls run in the background even when this page is closed.</p>
+        </div>
+
+        <!-- Schedule list -->
+        <div id="scheduleList"></div>
+
+      </div><!-- /panelSchedules -->
+
+    </main>
+
+    <!-- ── Dialogs ── -->
+
+    <!-- Load crawl -->
+    <dialog id="loadModal">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <h2 class="text-base font-medium">load crawl</h2>
+        <button onclick="this.closest('dialog').close()"
+          class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-4 max-h-80 overflow-y-auto">
+        <div id="crawlLoadList" class="space-y-1"></div>
+      </div>
+    </dialog>
+
+    <!-- Delete crawl -->
+    <dialog id="deleteModal">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <h2 class="text-base font-medium">delete crawl</h2>
+        <button onclick="this.closest('dialog').close()"
+          class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-4 max-h-80 overflow-y-auto">
+        <div id="crawlDeleteList" class="space-y-1"></div>
+      </div>
+    </dialog>
+
+    <!-- Configuration -->
+    <dialog id="configModal">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <h2 class="text-base font-medium">crawl configuration</h2>
+        <button onclick="this.closest('dialog').close()"
+          class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+
+        <div class="flex items-center gap-4">
+          <label for="maxRetries" class="w-40 text-sm text-slate-600 shrink-0">
+            max retries: <span id="maxRetriesValue" class="font-medium text-slate-800">0</span>
+          </label>
+          <input type="range" id="maxRetries" class="flex-1" min="0" max="3" step="1" value="0" />
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label for="delay" class="w-40 text-sm text-slate-600 shrink-0">
+            crawl delay: <span id="delayValue" class="font-medium text-slate-800">288</span> ms
+          </label>
+          <input type="range" id="delay" class="flex-1" min="0" max="3000" step="1" value="288" />
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label for="maxConnections" class="w-40 text-sm text-slate-600 shrink-0">
+            max connections: <span id="maxConnectionsValue" class="font-medium text-slate-800">20</span>
+          </label>
+          <input type="range" id="maxConnections" class="flex-1" min="1" max="60" step="1" value="20" />
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label for="stayonhostname" class="w-40 text-sm text-slate-600 shrink-0">stay on hostname</label>
+          <input type="checkbox" id="stayonhostname"
+            class="h-4 w-4 rounded border-slate-300 text-blue-600" />
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label for="credentials" class="w-40 text-sm text-slate-600 shrink-0">
+            <a href="https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials"
+              target="_blank" class="hover:underline">credentials</a>
+          </label>
+          <select id="credentials"
+            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="omit">omit (no cookies, basic http auth, …)</option>
+            <option value="same-origin">same-origin (cookies, basic http auth, …)</option>
+            <option value="include">include (always cookies, basic http auth, …)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label for="cache" class="w-40 text-sm text-slate-600 shrink-0">
+            <a href="https://developer.mozilla.org/en-US/docs/Web/API/Request/cache"
+              target="_blank" class="hover:underline">cache</a>
+          </label>
+          <select id="cache"
+            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="no-store">no-store (fetch always, no cache update)</option>
+            <option value="reload">reload (fetch always, but update cache)</option>
+            <option value="default">default</option>
+            <option value="force-cache">force-cache (get cache, even if stale)</option>
+            <option value="only-if-cached">only-if-cached (same-origin only)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label for="charset" class="w-40 text-sm text-slate-600 shrink-0">document charset</label>
+          <input class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            list="charsetOptions" id="charset"
+            placeholder="enter any charset or select" value="utf-8" />
+          <datalist id="charsetOptions">
+            <option value="utf-8"></option>
+            <option value="iso-8859-1"></option>
+          </datalist>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label for="readability" class="w-40 text-sm text-slate-600 shrink-0">extract text</label>
+          <input type="checkbox" id="readability"
+            class="h-4 w-4 rounded border-slate-300 text-blue-600" />
+        </div>
+
+      </div>
+    </dialog>
+
+    <!-- CSV import -->
+    <dialog id="csvModal">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <h2 class="text-base font-medium">load CSV</h2>
+        <button onclick="this.closest('dialog').close()"
+          class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <div id="csvDropArea"
+          class="border-2 border-dashed border-slate-300 rounded-lg px-6 py-8 text-center text-sm text-slate-500 hover:border-blue-400 transition-colors">
+          drop CSV file here or use the picker below
+        </div>
+        <input type="file" id="csvFileInput" accept="text/csv"
+          class="block w-full text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:border file:border-slate-300 file:rounded file:text-sm file:bg-white file:text-slate-700 hover:file:bg-slate-50" />
+        <button id="loadCSVBtn"
+          class="w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">load URLs</button>
+      </div>
+    </dialog>
+
+    <!-- Sitemap import -->
+    <dialog id="sitemapModal">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <h2 class="text-base font-medium">load sitemap</h2>
+        <button onclick="this.closest('dialog').close()"
+          class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <div id="sitemapDropArea"
+          class="border-2 border-dashed border-slate-300 rounded-lg px-6 py-8 text-center text-sm text-slate-500 hover:border-blue-400 transition-colors">
+          drop sitemap XML file here
+        </div>
+        <input type="file" id="sitemapFileInput" accept="application/xml,text/xml,.xml,.gz"
+          class="block w-full text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:border file:border-slate-300 file:rounded file:text-sm file:bg-white file:text-slate-700 hover:file:bg-slate-50" />
+        <div class="flex items-center gap-2 text-sm text-slate-500">
+          <span class="flex-1 border-t border-slate-200"></span>
+          <span>or enter URL</span>
+          <span class="flex-1 border-t border-slate-200"></span>
+        </div>
+        <input id="sitemapUrlInput" type="search" placeholder="https://example.com/sitemap.xml"
+          class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        <button id="loadSitemapBtn"
+          class="w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">load sitemap</button>
+      </div>
+    </dialog>
+
+    <script type="module" src="./dragon.js"></script>
+  </body>
+</html>
