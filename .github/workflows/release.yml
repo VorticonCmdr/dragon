@@ -1,0 +1,47 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Read version from manifest
+        id: meta
+        run: |
+          VERSION=$(node -p "require('./public/manifest.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "zip=blue-dragon-$VERSION.zip" >> $GITHUB_OUTPUT
+
+      - name: Zip dist/
+        run: zip -r "${{ steps.meta.outputs.zip }}" dist/
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: blue-dragon-${{ steps.meta.outputs.version }}
+          path: ${{ steps.meta.outputs.zip }}
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: blue dragon ${{ steps.meta.outputs.version }}
+          files: ${{ steps.meta.outputs.zip }}
