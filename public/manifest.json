@@ -1,5 +1,6 @@
 {
-  "permissions": ["storage", "unlimitedStorage", "webRequest", "alarms"],
+  "permissions": ["storage", "unlimitedStorage", "webRequest", "alarms", "notifications", "declarativeNetRequest", "declarativeNetRequestWithHostAccess"],
+  "options_page": "options.html",
   "host_permissions": [
     "<all_urls>"
   ],
@@ -19,5 +20,5 @@
   "manifest_version": 3,
   "name": "blue dragon",
   "homepage_url": "https://valentin.app/blue-dragon.html",
-  "version": "0.0.0.2"
+  "version": "0.0.0.3"
 }

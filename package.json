@@ -1,6 +1,6 @@
 {
   "name": "blue-dragon",
-  "version": "0.0.0.2",
+  "version": "0.0.0.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,10 @@
     "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "@mozilla/readability": "^0.5.0",
+    "fflate": "^0.8.3",
+    "google-robotstxt-parser": "^1.0.0",
     "papaparse": "^5.4.1",
     "tabulator-tables": "^6.3.0"
   },

@@ -59,9 +59,11 @@
         class="tab-btn px-5 py-2.5 text-sm font-medium text-blue-600 border-b-2 border-blue-600 -mb-px">Crawl</button>
       <button data-tab="schedules"
         class="tab-btn px-5 py-2.5 text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px">Schedules</button>
+      <button data-tab="log"
+        class="tab-btn px-5 py-2.5 text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px">Log</button>
     </div>
 
-    <main class="max-w-screen-xl mx-auto px-4 py-4">
+    <main class="max-w-screen-2xl mx-auto px-4 py-4">
       <div id="panelCrawl" class="space-y-3">
 
       <!-- Progress bar -->
@@ -82,7 +84,10 @@
 
       <!-- URL list -->
       <div class="space-y-2">
-        <label for="urlListTextarea" class="text-xs text-slate-500">or enter URL list:</label>
+        <div class="flex items-center justify-between">
+          <label for="urlListTextarea" class="text-xs text-slate-500">or enter URL list:</label>
+          <span id="urlListCount" class="text-xs text-slate-400"></span>
+        </div>
         <textarea id="urlListTextarea" rows="8"
           placeholder="input URLs here line by line"
           class="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
@@ -96,7 +101,12 @@
           <!-- Predefined regex -->
           <div id="predefinedRegex" class="relative">
             <button data-menu="regex-presets"
-              class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50 cursor-pointer">regex</button>
+              class="flex items-center gap-1 px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50 cursor-pointer">
+              regex
+              <svg class="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
             <ul id="regex-presets" class="dropdown-menu hidden absolute top-full right-0 mt-1 w-52 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1">
               <li><button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                 data-regex="[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$">uuid</button></li>
@@ -108,15 +118,11 @@
           </div>
 
           <!-- Filter include/exclude -->
-          <div id="regexFilterBtn" class="relative">
-            <button data-menu="filter-actions"
-              class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50 cursor-pointer">filter</button>
-            <ul id="filter-actions" class="dropdown-menu hidden absolute top-full right-0 mt-1 w-36 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1">
-              <li><button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                data-type="include">include</button></li>
-              <li><button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                data-type="exclude">exclude</button></li>
-            </ul>
+          <div id="regexFilterBtn" class="flex gap-1">
+            <button data-type="include"
+              class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50 cursor-pointer">include</button>
+            <button data-type="exclude"
+              class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50 cursor-pointer">exclude</button>
           </div>
         </div>
 
@@ -128,8 +134,12 @@
       <div class="flex items-center gap-2 pt-1">
         <input id="tableSearch" type="search" placeholder="search table…"
           class="border border-slate-300 rounded px-3 py-1.5 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        <button id="linksBtn"
+          class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50">links</button>
         <button id="exportCSVBtn"
           class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50">export CSV</button>
+        <button id="exportOpfsZipBtn"
+          class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50">export HTML ZIP</button>
         <div class="relative">
           <button id="columnsBtn"
             class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50">columns</button>
@@ -179,6 +189,26 @@
             </div>
           </div>
 
+          <!-- Crawl settings -->
+          <div class="space-y-2">
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide">Crawl settings</p>
+            <div class="flex gap-2">
+              <div class="flex-1">
+                <label class="text-xs text-slate-500 block mb-1">Crawl Mode</label>
+                <select id="scheduleCrawlMode"
+                  class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="list">list (exact URLs)</option>
+                  <option value="recursive">autonomous (recursive spider)</option>
+                </select>
+              </div>
+              <div class="w-32">
+                <label class="text-xs text-slate-500 block mb-1">Max Pages</label>
+                <input id="scheduleMaxPages" type="number" min="1" value="500"
+                  class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              </div>
+            </div>
+          </div>
+
           <!-- Regex filter -->
           <div class="space-y-1">
             <p class="text-xs font-medium text-slate-400 uppercase tracking-wide">Regex filter</p>
@@ -216,15 +246,58 @@
 
       </div><!-- /panelSchedules -->
 
+      <!-- Log panel -->
+      <div id="panelLog" class="hidden flex flex-col" style="height: calc(100vh - 108px)">
+        <div class="flex items-center justify-between py-2 shrink-0">
+          <span class="text-xs text-slate-400">Live resource timing · updates as URLs are fetched</span>
+          <button id="clearLogBtn"
+            class="px-3 py-1 text-xs border border-slate-300 rounded text-slate-600 hover:bg-slate-50">clear</button>
+        </div>
+        <div id="logContainer" class="flex-1 overflow-y-auto border border-slate-200 rounded-lg">
+          <table class="w-full text-xs font-mono border-collapse">
+            <thead class="sticky top-0 bg-white border-b border-slate-200 text-left">
+              <tr>
+                <th class="px-3 py-2 font-medium text-slate-500 whitespace-nowrap">time</th>
+                <th class="px-3 py-2 font-medium text-slate-500 whitespace-nowrap w-16 text-right">status</th>
+                <th class="px-3 py-2 font-medium text-slate-500 whitespace-nowrap w-20 text-right">ms</th>
+                <th class="px-3 py-2 font-medium text-slate-500 whitespace-nowrap w-20 text-right">size</th>
+                <th class="px-3 py-2 font-medium text-slate-500 whitespace-nowrap">content-type</th>
+                <th class="px-3 py-2 font-medium text-slate-500 whitespace-nowrap">delivery</th>
+                <th class="px-3 py-2 font-medium text-slate-500">URL</th>
+              </tr>
+            </thead>
+            <tbody id="logBody"></tbody>
+          </table>
+        </div>
+      </div><!-- /panelLog -->
+
     </main>
 
     <!-- ── Dialogs ── -->
+
+    <!-- Save crawl -->
+    <dialog id="saveModal">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <h2 class="text-base font-medium">save crawl</h2>
+        <button data-dialog-close
+          class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <div>
+          <label class="text-xs text-slate-500 block mb-1">Name <span class="text-slate-400">({hostname} and {datetime} are replaced on save)</span></label>
+          <input id="saveNameTemplate" type="search" value="{hostname} {datetime}"
+            class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        </div>
+        <button id="saveConfirmBtn"
+          class="w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">save</button>
+      </div>
+    </dialog>
 
     <!-- Load crawl -->
     <dialog id="loadModal">
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
         <h2 class="text-base font-medium">load crawl</h2>
-        <button onclick="this.closest('dialog').close()"
+        <button data-dialog-close
           class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
       </div>
       <div class="px-6 py-4 max-h-80 overflow-y-auto">
@@ -236,7 +309,7 @@
     <dialog id="deleteModal">
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
         <h2 class="text-base font-medium">delete crawl</h2>
-        <button onclick="this.closest('dialog').close()"
+        <button data-dialog-close
           class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
       </div>
       <div class="px-6 py-4 max-h-80 overflow-y-auto">
@@ -248,10 +321,43 @@
     <dialog id="configModal">
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
         <h2 class="text-base font-medium">crawl configuration</h2>
-        <button onclick="this.closest('dialog').close()"
+        <button data-dialog-close
           class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
       </div>
       <div class="px-6 py-5 space-y-4">
+
+        <div class="flex items-center gap-4">
+          <label for="crawlMode" class="w-40 text-sm text-slate-600 shrink-0 font-medium">crawl mode</label>
+          <select id="crawlMode"
+            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="list">list (fixed list of URLs)</option>
+            <option value="recursive">autonomous (recursive spider)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label for="maxPages" class="w-40 text-sm text-slate-600 shrink-0 font-medium">max pages limit</label>
+          <input type="number" id="maxPages" min="1" value="500"
+            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label for="filterRegex" class="w-40 text-sm text-slate-600 shrink-0 font-medium">crawl filter regex</label>
+          <input id="filterRegex" type="text" placeholder="e.g. /product/"
+            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label for="filterType" class="w-40 text-sm text-slate-600 shrink-0 font-medium">crawl filter type</label>
+          <select id="filterType"
+            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">off</option>
+            <option value="include">include matching</option>
+            <option value="exclude">exclude matching</option>
+          </select>
+        </div>
+
+        <hr class="border-slate-100" />
 
         <div class="flex items-center gap-4">
           <label for="maxRetries" class="w-40 text-sm text-slate-600 shrink-0">
@@ -277,6 +383,12 @@
         <div class="flex items-center gap-4">
           <label for="stayonhostname" class="w-40 text-sm text-slate-600 shrink-0">stay on hostname</label>
           <input type="checkbox" id="stayonhostname"
+            class="h-4 w-4 rounded border-slate-300 text-blue-600" />
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label for="respectRobots" class="w-40 text-sm text-slate-600 shrink-0">respect robots.txt</label>
+          <input type="checkbox" id="respectRobots" checked
             class="h-4 w-4 rounded border-slate-300 text-blue-600" />
         </div>
 
@@ -325,6 +437,18 @@
             class="h-4 w-4 rounded border-slate-300 text-blue-600" />
         </div>
 
+        <div class="flex items-center gap-4">
+          <label for="opfsEnabled" class="w-40 text-sm text-slate-600 shrink-0">save HTML to OPFS</label>
+          <input type="checkbox" id="opfsEnabled"
+            class="h-4 w-4 rounded border-slate-300 text-blue-600" />
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label for="opfsRootDir" class="w-40 text-sm text-slate-600 shrink-0">OPFS root directory</label>
+          <input id="opfsRootDir" type="text" placeholder="crawl_archive"
+            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+        </div>
+
       </div>
     </dialog>
 
@@ -332,7 +456,7 @@
     <dialog id="csvModal">
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
         <h2 class="text-base font-medium">load CSV</h2>
-        <button onclick="this.closest('dialog').close()"
+        <button data-dialog-close
           class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
       </div>
       <div class="px-6 py-5 space-y-4">
@@ -351,7 +475,7 @@
     <dialog id="sitemapModal">
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
         <h2 class="text-base font-medium">load sitemap</h2>
-        <button onclick="this.closest('dialog').close()"
+        <button data-dialog-close
           class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
       </div>
       <div class="px-6 py-5 space-y-4">
@@ -370,9 +494,29 @@
           class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
         <button id="loadSitemapBtn"
           class="w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">load sitemap</button>
+        <p id="sitemapStatus" class="hidden text-xs text-slate-500 text-center"></p>
       </div>
     </dialog>
 
+    <!-- Link explorer modal -->
+    <dialog id="linksModal" class="w-[90vw] max-w-6xl rounded-xl shadow-2xl p-0 backdrop:bg-black/40">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <div class="flex items-center gap-3">
+          <h2 class="text-base font-medium">internal links</h2>
+          <span class="text-xs bg-slate-100 text-slate-500 rounded-full px-2 py-0.5"><span id="linksCount">0</span> edges</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <input id="linksSearch" type="search" placeholder="filter source or target…"
+            class="border border-slate-300 rounded px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          <button data-dialog-close class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+        </div>
+      </div>
+      <div class="p-4">
+        <div id="linksTable"></div>
+      </div>
+    </dialog>
+
+    <script src="./db.js"></script>
     <script type="module" src="./dragon.js"></script>
   </body>
 </html>
