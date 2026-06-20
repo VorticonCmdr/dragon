@@ -128,9 +128,9 @@ Open via the **Configuration** button in the navbar.
 | max pages limit | 500 | Upper bound for autonomous mode |
 | crawl filter regex | — | Regex applied to discovered URLs in autonomous mode |
 | crawl filter type | off | `include` or `exclude` the regex matches |
-| max retries | 0 | How many times to retry a failed URL |
-| crawl delay | 288 ms | Pause between requests |
-| max connections | 20 | Concurrent fetch limit |
+| max retries | 2 | How many times to retry a failed URL |
+| crawl delay | 0 ms | Pause between requests |
+| max connections | 5 | Concurrent fetch limit |
 | stay on hostname | off | Skip URLs from other hostnames (auto-enabled in autonomous mode) |
 | respect robots.txt | on | Honour robots.txt rules for the active bot User-Agent |
 | fetch outbound | off | In list mode: fully crawl discovered outbound links (all stats) without adding them to the queue |

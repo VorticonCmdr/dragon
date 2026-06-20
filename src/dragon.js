@@ -57,9 +57,9 @@ let crawl = {
     stayonhostname: false,
     readability: false,
     charset: 'utf-8',
-    maxRetries: 0,
-    delay: 288,
-    maxConnections: 20,
+    maxRetries: 2,
+    delay: 0,
+    maxConnections: 5,
     credentials: 'omit',
     cache: 'no-store',
     crawlMode: 'list',
@@ -131,12 +131,12 @@ function saveSettings() {
 
 function applySettings(s) {
   Object.assign(crawl.settings, s);
-  document.getElementById('maxRetries').value = s.maxRetries ?? 0;
-  document.getElementById('maxRetriesValue').textContent = s.maxRetries ?? 0;
-  document.getElementById('maxConnections').value = s.maxConnections ?? 20;
-  document.getElementById('maxConnectionsValue').textContent = s.maxConnections ?? 20;
-  document.getElementById('delay').value = s.delay ?? 288;
-  document.getElementById('delayValue').textContent = s.delay ?? 288;
+  document.getElementById('maxRetries').value = s.maxRetries ?? 2;
+  document.getElementById('maxRetriesValue').textContent = s.maxRetries ?? 2;
+  document.getElementById('maxConnections').value = s.maxConnections ?? 5;
+  document.getElementById('maxConnectionsValue').textContent = s.maxConnections ?? 5;
+  document.getElementById('delay').value = s.delay ?? 0;
+  document.getElementById('delayValue').textContent = s.delay ?? 0;
   document.getElementById('credentials').value = s.credentials ?? 'omit';
   document.getElementById('cache').value = s.cache ?? 'no-store';
   document.getElementById('charset').value = s.charset ?? 'utf-8';
