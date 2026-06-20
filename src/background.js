@@ -1,4 +1,5 @@
-importScripts('db.js');
+import { parse as parseHtml } from 'node-html-parser';
+import './db.js';
 
 // ── User-Agent via declarativeNetRequest ───────────────────────────────────
 
@@ -276,8 +277,12 @@ async function runBackgroundCrawl() {
           };
           activeCrawl.data.alreadyFetched[url] = 1;
 
-          // Recursive mode: discover and enqueue links
+          // Recursive mode: store internal links + discover and enqueue links
           if (activeCrawl.settings.crawlMode === 'recursive' && response.ok && html) {
+            const contentType = response.headers.get('content-type') || '';
+            if (contentType.includes('text/html')) {
+              activeCrawl.data.results[url].links = extractInternalLinksFromHtml(html, url);
+            }
             const base = new URL(url);
             for (const link of extractLinks(html, url)) {
               if (activeCrawl.data.alreadyFetched[link] !== undefined) continue;
@@ -678,15 +683,54 @@ async function resolveUrls(sources, filter) {
 function extractLinks(html, baseUrl) {
   const base = new URL(baseUrl);
   const seen = new Set();
-  const re = /href=["']([^"'#][^"']*)/gi;
-  let m;
-  while ((m = re.exec(html)) !== null) {
+  for (const el of parseHtml(html).querySelectorAll('a[href], area[href]')) {
+    const href = el.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('javascript:')) continue;
+    if (href.includes('${') || href.includes('{{')) continue;
     try {
-      const u = new URL(m[1], base);
+      const u = new URL(href, base);
       if (u.protocol === 'http:' || u.protocol === 'https:') seen.add(u.href);
     } catch {}
   }
   return [...seen];
+}
+
+// Returns [{url, follow, directive_source}] for same-hostname links — used to
+// populate result.links for the link explorer and inbound/outbound counts.
+function extractInternalLinksFromHtml(html, baseUrl) {
+  const base = new URL(baseUrl);
+  const seen = new Map();
+  const root = parseHtml(html);
+
+  let pageFollow = null, pageSource = null;
+  const metaRobots = root.querySelector('meta[name="robots"]');
+  if (metaRobots) {
+    const c = (metaRobots.getAttribute('content') || '').toLowerCase();
+    if (c.includes('nofollow')) { pageFollow = 'nofollow'; pageSource = 'meta'; }
+  }
+
+  const FOLLOW_TOKENS = ['nofollow', 'ugc', 'sponsored'];
+  for (const a of root.querySelectorAll('a[href]')) {
+    const href = a.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('javascript:')) continue;
+    if (href.includes('${') || href.includes('{{')) continue;
+    try {
+      const u = new URL(href, base);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') continue;
+      if (u.hostname !== base.hostname) continue;
+      u.hash = '';
+      const url = u.href;
+      if (seen.has(url)) continue;
+      const relTokens = (a.getAttribute('rel') || '').toLowerCase().split(/\s+/);
+      const anchorFollow = relTokens.find(t => FOLLOW_TOKENS.includes(t)) || null;
+      let follow, directive_source;
+      if (anchorFollow) { follow = anchorFollow; directive_source = 'anchor'; }
+      else if (pageFollow) { follow = pageFollow; directive_source = pageSource; }
+      else { follow = 'follow'; directive_source = ''; }
+      seen.set(url, { url, follow, directive_source });
+    } catch {}
+  }
+  return [...seen.values()];
 }
 
 async function fetchSitemapUrls(url) {

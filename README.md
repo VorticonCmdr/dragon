@@ -245,6 +245,7 @@ Live feed of all fetch events during a crawl — URL, status code, duration, and
 | CSV parsing | PapaParse |
 | Text extraction | @mozilla/readability |
 | Robots.txt parsing | google-robotstxt-parser |
+| HTML parsing | node-html-parser |
 | Background scheduling | `chrome.alarms` API (Manifest V3) |
 | Storage | `chrome.storage.local` + Origin Private File System (OPFS) |
 

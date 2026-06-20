@@ -12,6 +12,13 @@ export default defineConfig({
     rollupOptions: {
       input: {
         dragon: resolve(__dirname, 'src/dragon.html'),
+        background: resolve(__dirname, 'src/background.js'),
+      },
+      output: {
+        entryFileNames: chunk =>
+          chunk.name === 'background' ? '[name].js' : 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        format: 'es',
       },
     },
   },

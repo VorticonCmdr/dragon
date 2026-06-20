@@ -786,6 +786,7 @@ function extractInternalLinks(doc, currentUrl, metaRobots = '', xRobotsTag = '',
   [...doc.links].forEach(link => {
     const rawHref = link.getAttribute('href');
     if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('javascript:')) return;
+    if (rawHref.includes('${') || rawHref.includes('{{')) return;
     let resolved;
     try { resolved = new URL(rawHref, currentUrl); } catch { return; }
     if (resolved.protocol !== 'http:' && resolved.protocol !== 'https:') return;
@@ -822,7 +823,8 @@ function extractNewLinks(doc, currentUrl) {
   [...doc.links].forEach(link => {
     const rawHref = link.getAttribute('href');
     if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('javascript:')) return;
-    
+    if (rawHref.includes('${') || rawHref.includes('{{')) return;
+
     let resolvedUrl;
     try {
       resolvedUrl = new URL(rawHref, currentUrl);
@@ -1724,6 +1726,7 @@ document.getElementById('linksSearch').addEventListener('input', function () {
 
 chrome.webRequest.onHeadersReceived.addListener(
   details => {
+    if (!crawl.data.responseHeaders) crawl.data.responseHeaders = {};
     crawl.data.responseHeaders[details.requestId] = {
       requestURL: details.url,
       responseHeaders: details.responseHeaders,
