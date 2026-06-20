@@ -61,16 +61,21 @@
         class="tab-btn px-5 py-2.5 text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px">Schedules</button>
       <button data-tab="log"
         class="tab-btn px-5 py-2.5 text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px">Log</button>
+      <button data-tab="issues"
+        class="tab-btn px-5 py-2.5 text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px">Issues</button>
     </div>
 
     <main class="max-w-screen-2xl mx-auto px-4 py-4">
       <div id="panelCrawl" class="space-y-3">
 
       <!-- Progress bar -->
-      <div id="progressContainer" class="hidden h-5 w-full bg-slate-100 rounded overflow-hidden">
+      <div id="progressContainer" class="hidden h-5 w-full bg-slate-100 rounded relative overflow-hidden">
         <div id="progress"
-          class="h-full bg-blue-500 text-xs text-white flex items-center px-2 transition-all duration-200"
-          style="width: 0%">–</div>
+          class="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-200"
+          style="width: 0%"></div>
+        <span id="progressLabel"
+          class="absolute inset-0 flex items-center px-2 text-xs text-white"
+          style="text-shadow: 0 1px 2px rgba(0,0,0,0.45)">–</span>
       </div>
 
       <!-- Spider URL -->
@@ -128,9 +133,16 @@
 
         <button id="crawlBtn"
           class="w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">crawl</button>
+        <div id="crawlControls" class="hidden flex gap-2">
+          <button id="pauseBtn"
+            class="flex-1 py-2 text-sm bg-amber-500 text-white rounded hover:bg-amber-600">pause</button>
+          <button id="stopBtn"
+            class="py-2 px-4 text-sm border border-slate-300 rounded text-slate-600 hover:bg-slate-50">stop</button>
+        </div>
       </div>
 
-      <!-- Table toolbar -->
+      <!-- Table toolbar + results (hidden while crawl is running) -->
+      <div id="resultsArea" class="hidden space-y-2">
       <div class="flex items-center gap-2 pt-1">
         <input id="tableSearch" type="search" placeholder="search table…"
           class="border border-slate-300 rounded px-3 py-1.5 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
@@ -151,6 +163,7 @@
 
       <!-- Table container -->
       <div id="jsonTable"></div>
+      </div><!-- /resultsArea -->
 
       </div><!-- /panelCrawl -->
 
@@ -224,21 +237,46 @@
             </div>
           </div>
 
-          <!-- Interval + submit -->
-          <div class="flex gap-2 items-center">
-            <span class="text-xs text-slate-500 shrink-0">every</span>
-            <input id="scheduleInterval" type="number" min="1" value="1"
-              class="w-16 border border-slate-300 rounded px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <select id="scheduleUnit"
-              class="border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="minutes">min</option>
-              <option value="hours" selected>h</option>
-              <option value="days">d</option>
-            </select>
-            <button id="addScheduleBtn"
-              class="ml-auto px-4 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 shrink-0">add</button>
+          <!-- Schedule interval + time of day -->
+          <div class="space-y-2">
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide">Schedule</p>
+            <div class="flex gap-2 items-end flex-wrap">
+              <div class="flex-1 min-w-36">
+                <label class="text-xs text-slate-500 block mb-1">Frequency</label>
+                <select id="scheduleInterval"
+                  class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="60">Hourly</option>
+                  <option value="120">Every 2 hours</option>
+                  <option value="240">Every 4 hours</option>
+                  <option value="360">Every 6 hours</option>
+                  <option value="720">Every 12 hours</option>
+                  <option value="1440" selected>Daily</option>
+                  <option value="10080">Weekly</option>
+                </select>
+              </div>
+              <div class="w-28">
+                <label class="text-xs text-slate-500 block mb-1">At time</label>
+                <input type="time" id="scheduleTime" value="03:00"
+                  class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              </div>
+              <div class="w-36" id="scheduleDayOfWeekWrap" style="display:none">
+                <label class="text-xs text-slate-500 block mb-1">Day</label>
+                <select id="scheduleDayOfWeek"
+                  class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="0">Sunday</option>
+                  <option value="1" selected>Monday</option>
+                  <option value="2">Tuesday</option>
+                  <option value="3">Wednesday</option>
+                  <option value="4">Thursday</option>
+                  <option value="5">Friday</option>
+                  <option value="6">Saturday</option>
+                </select>
+              </div>
+              <button id="addScheduleBtn"
+                class="px-4 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 shrink-0" style="align-self:flex-end">add</button>
+            </div>
           </div>
-          <p class="text-xs text-slate-400">Min. interval: 1 minute · Crawls run in the background even when this page is closed.</p>
+          <p class="text-xs text-slate-400">Crawls run in the background even when this page is closed.</p>
         </div>
 
         <!-- Schedule list -->
@@ -270,6 +308,11 @@
           </table>
         </div>
       </div><!-- /panelLog -->
+
+      <!-- Issues panel -->
+      <div id="panelIssues" class="hidden space-y-3 pt-2">
+        <div id="issuesList" class="space-y-2"></div>
+      </div><!-- /panelIssues -->
 
     </main>
 
@@ -393,6 +436,18 @@
         </div>
 
         <div class="flex items-center gap-4">
+          <label for="fetchOutbound" class="w-40 text-sm text-slate-600 shrink-0">fetch outbound</label>
+          <input type="checkbox" id="fetchOutbound"
+            class="h-4 w-4 rounded border-slate-300 text-blue-600" />
+        </div>
+
+        <div class="flex items-center gap-4">
+          <label class="w-40 text-sm text-slate-600 shrink-0">robots.txt</label>
+          <a href="robots.html" target="_blank"
+            class="text-sm text-blue-600 hover:underline">manage overrides →</a>
+        </div>
+
+        <div class="flex items-center gap-4">
           <label for="credentials" class="w-40 text-sm text-slate-600 shrink-0">
             <a href="https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials"
               target="_blank" class="hover:underline">credentials</a>
@@ -513,6 +568,34 @@
       </div>
       <div class="p-4">
         <div id="linksTable"></div>
+      </div>
+    </dialog>
+
+    <!-- URL detail modal -->
+    <dialog id="detailModal" class="w-[90vw] max-w-5xl rounded-xl shadow-2xl p-0 backdrop:bg-black/40 max-h-[90vh] overflow-hidden">
+      <div class="flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
+        <div class="min-w-0">
+          <p id="detailModalTitle" class="text-sm font-medium truncate"></p>
+          <a id="detailModalUrl" href="" target="_blank" class="text-xs text-blue-600 hover:underline break-all"></a>
+        </div>
+        <button data-dialog-close class="ml-4 flex-shrink-0 text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+      </div>
+      <div class="overflow-y-auto flex-1 p-6 space-y-6">
+        <div id="detailBody" class="space-y-4"></div>
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">
+            Outbound Links <span id="detailOutboundCount" class="normal-case font-normal"></span>
+          </h3>
+          <div id="detailOutboundTable"></div>
+        </div>
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">
+            Inbound Links <span id="detailInboundCount" class="normal-case font-normal"></span>
+          </h3>
+          <div id="detailInboundTable"></div>
+        </div>
+      </div>
       </div>
     </dialog>
 

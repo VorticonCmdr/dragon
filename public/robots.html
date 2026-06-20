@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>robots.txt — blue dragon</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.875rem;
+      color: #1e293b;
+      background: #f8fafc;
+      min-height: 100vh;
+    }
+    header {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    header img { width: 24px; height: 24px; }
+    header h1 { font-size: 0.9375rem; font-weight: 600; color: #0f172a; }
+    main { max-width: 860px; margin: 2rem auto; padding: 0 1rem; display: flex; flex-direction: column; gap: 1rem; }
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+    }
+    .card-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .origin { font-size: 0.875rem; font-weight: 600; color: #0f172a; font-family: ui-monospace, monospace; word-break: break-all; }
+    .badge { font-size: 0.7rem; padding: 0.15rem 0.6rem; border-radius: 9999px; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+    .badge-override { background: #dbeafe; color: #1d4ed8; }
+    .badge-fetched { background: #f1f5f9; color: #64748b; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    label { display: block; font-size: 0.7rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+    textarea {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.375rem;
+      padding: 0.5rem 0.75rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.75rem;
+      color: #1e293b;
+      background: #fff;
+      outline: none;
+      resize: vertical;
+      min-height: 130px;
+    }
+    textarea:focus { box-shadow: 0 0 0 2px #3b82f6; border-color: #3b82f6; }
+    textarea.readonly { background: #f8fafc; color: #64748b; cursor: default; }
+    textarea.empty { color: #94a3b8; }
+    .row { display: flex; gap: 0.5rem; align-items: center; }
+    button {
+      padding: 0.4rem 1rem;
+      font-family: inherit;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s;
+    }
+    .btn-primary { background: #3b82f6; color: #fff; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-ghost { background: #fff; color: #475569; border-color: #cbd5e1; }
+    .btn-ghost:hover { background: #f1f5f9; }
+    .btn-danger { background: #fff; color: #dc2626; border-color: #fca5a5; }
+    .btn-danger:hover { background: #fef2f2; }
+    .status-msg { font-size: 0.8rem; color: #16a34a; }
+    .add-card {
+      background: #fff;
+      border: 2px dashed #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .add-card h2 { font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    input[type=text] {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.375rem;
+      padding: 0.5rem 0.75rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.8125rem;
+      color: #1e293b;
+      background: #fff;
+      outline: none;
+    }
+    input:focus { box-shadow: 0 0 0 2px #3b82f6; border-color: #3b82f6; }
+    #noData { color: #94a3b8; font-size: 0.875rem; text-align: center; padding: 2rem 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="icons/dragon32.png" alt="blue dragon" />
+    <h1>robots.txt management</h1>
+  </header>
+  <main>
+    <div id="robotsList"></div>
+
+    <div class="add-card">
+      <h2>Add override for new origin</h2>
+      <input type="text" id="newOrigin" placeholder="https://example.com" />
+      <div>
+        <label>Override content <span style="color:#cbd5e1;font-weight:400;text-transform:none">(empty = allow all)</span></label>
+        <textarea id="newContent" placeholder="User-agent: *&#10;Disallow: /private/"></textarea>
+      </div>
+      <div class="row">
+        <button class="btn-ghost" id="fetchNewBtn">Fetch</button>
+        <button class="btn-primary" id="addBtn">Save override</button>
+        <span id="addStatus" class="status-msg"></span>
+      </div>
+    </div>
+  </main>
+  <script src="robots.js"></script>
+</body>
+</html>

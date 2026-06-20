@@ -10,6 +10,25 @@ import { RobotsMatcher } from 'google-robotstxt-parser';
 
 let table = null;
 let linksTable = null;
+let detailOutboundTable = null;
+let detailInboundTable = null;
+let crawlPaused = false;
+let crawlStopped = false;
+let crawlAbortController = null;
+
+function setCrawlState(state) {
+  const crawlBtn = document.getElementById('crawlBtn');
+  const controls = document.getElementById('crawlControls');
+  const pauseBtn = document.getElementById('pauseBtn');
+  if (state === 'idle') {
+    crawlBtn.classList.remove('hidden');
+    controls.classList.add('hidden');
+  } else {
+    crawlBtn.classList.add('hidden');
+    controls.classList.remove('hidden');
+    pauseBtn.textContent = state === 'paused' ? 'resume' : 'pause';
+  }
+}
 let urlsTxt = '';
 
 const urlFormatter = (cell) => {
@@ -29,6 +48,8 @@ let crawl = {
     queue: [],
     queueMaxLength: 1,
     alreadyFetched: {},
+    depth: {},
+    outboundOnly: {},
     results: {},
     responseHeaders: {},
   },
@@ -46,6 +67,7 @@ let crawl = {
     filterRegex: '',
     filterType: '',
     respectRobots: true,
+    fetchOutbound: false,
   },
   csv: { data: {} },
 };
@@ -58,6 +80,8 @@ const urlListCount = document.getElementById('urlListCount');
 function updateUrlListCount() {
   const n = urlListTextarea.value.split('\n').filter(l => l.trim()).length;
   urlListCount.textContent = n > 0 ? `${n} URLs` : '';
+  const overLimit = crawl.settings.crawlMode === 'list' && n > crawl.settings.maxPages;
+  urlListCount.style.color = overLimit ? '#f97316' : '';
 }
 urlListTextarea.addEventListener('input', updateUrlListCount);
 
@@ -101,39 +125,88 @@ document.querySelectorAll('dialog').forEach(dialog => {
 
 // ── Settings ───────────────────────────────────────────────────────────────
 
+function saveSettings() {
+  chrome.storage.local.set({ crawlSettings: crawl.settings });
+}
+
+function applySettings(s) {
+  Object.assign(crawl.settings, s);
+  document.getElementById('maxRetries').value = s.maxRetries ?? 0;
+  document.getElementById('maxRetriesValue').textContent = s.maxRetries ?? 0;
+  document.getElementById('maxConnections').value = s.maxConnections ?? 20;
+  document.getElementById('maxConnectionsValue').textContent = s.maxConnections ?? 20;
+  document.getElementById('delay').value = s.delay ?? 288;
+  document.getElementById('delayValue').textContent = s.delay ?? 288;
+  document.getElementById('credentials').value = s.credentials ?? 'omit';
+  document.getElementById('cache').value = s.cache ?? 'no-store';
+  document.getElementById('charset').value = s.charset ?? 'utf-8';
+  document.getElementById('readability').checked = s.readability ?? false;
+  document.getElementById('stayonhostname').checked = s.stayonhostname ?? false;
+  document.getElementById('respectRobots').checked = s.respectRobots ?? true;
+  document.getElementById('fetchOutbound').checked = s.fetchOutbound ?? false;
+  document.getElementById('crawlMode').value = s.crawlMode ?? 'list';
+  document.getElementById('maxPages').value = s.maxPages ?? 500;
+  document.getElementById('filterRegex').value = s.filterRegex ?? '';
+  document.getElementById('filterType').value = s.filterType ?? '';
+  updateUIForCrawlMode();
+}
+
+(async () => {
+  const { crawlSettings } = await chrome.storage.local.get('crawlSettings');
+  if (crawlSettings) applySettings(crawlSettings);
+})();
+
 document.getElementById('maxRetries').addEventListener('input', function () {
   crawl.settings.maxRetries = parseInt(this.value);
   document.getElementById('maxRetriesValue').textContent = this.value;
+  saveSettings();
 });
 
 document.getElementById('maxConnections').addEventListener('input', function () {
   crawl.settings.maxConnections = parseInt(this.value);
   document.getElementById('maxConnectionsValue').textContent = this.value;
+  saveSettings();
 });
 
 document.getElementById('delay').addEventListener('input', function () {
   crawl.settings.delay = parseInt(this.value);
   document.getElementById('delayValue').textContent = this.value;
+  saveSettings();
 });
 
 document.getElementById('credentials').addEventListener('change', function () {
   crawl.settings.credentials = this.value;
+  saveSettings();
 });
 
 document.getElementById('cache').addEventListener('change', function () {
   crawl.settings.cache = this.value;
+  saveSettings();
 });
 
 document.getElementById('charset').addEventListener('input', function () {
   crawl.settings.charset = this.value;
+  saveSettings();
 });
 
 document.getElementById('readability').addEventListener('change', function () {
   crawl.settings.readability = this.checked;
+  saveSettings();
 });
 
 document.getElementById('stayonhostname').addEventListener('change', function () {
   crawl.settings.stayonhostname = this.checked;
+  saveSettings();
+});
+
+document.getElementById('respectRobots').addEventListener('change', function () {
+  crawl.settings.respectRobots = this.checked;
+  saveSettings();
+});
+
+document.getElementById('fetchOutbound').addEventListener('change', function () {
+  crawl.settings.fetchOutbound = this.checked;
+  saveSettings();
 });
 
 document.getElementById('crawlMode').addEventListener('change', function () {
@@ -143,18 +216,24 @@ document.getElementById('crawlMode').addEventListener('change', function () {
     document.getElementById('stayonhostname').checked = true;
   }
   updateUIForCrawlMode();
+  updateUrlListCount();
+  saveSettings();
 });
 
 document.getElementById('maxPages').addEventListener('input', function () {
   crawl.settings.maxPages = parseInt(this.value, 10) || 500;
+  updateUrlListCount();
+  saveSettings();
 });
 
 document.getElementById('filterRegex').addEventListener('input', function () {
   crawl.settings.filterRegex = this.value.trim();
+  saveSettings();
 });
 
 document.getElementById('filterType').addEventListener('change', function () {
   crawl.settings.filterType = this.value;
+  saveSettings();
 });
 
 function updateUIForCrawlMode() {
@@ -229,32 +308,33 @@ document.getElementById('spiderBtn').addEventListener('click', async () => {
 // ── Crawl ──────────────────────────────────────────────────────────────────
 
 document.getElementById('crawlBtn').addEventListener('click', async () => {
-  // Reset crawl state
+  document.getElementById('resultsArea').classList.add('hidden');
   crawl.data.alreadyFetched = {};
+  crawl.data.depth = {};
+  crawl.data.outboundOnly = {};
   crawl.data.results = {};
   crawl.data.responseHeaders = {};
-  robotsCache.clear();
-  const { userAgent = '' } = await chrome.storage.local.get('userAgent');
-  currentBotName = extractBotName(userAgent);
+  crawl.id = new Date().getTime();
   if (table) table.replaceData([]);
+
+  const { opfsSettings = {} } = await chrome.storage.local.get('opfsSettings');
 
   if (crawl.settings.crawlMode === 'recursive') {
     const startVal = document.getElementById('spiderURL').value.trim();
     try {
       crawl.data.startURL = new URL(startVal);
     } catch (e) {
-      console.log(e.message);
       alert('Please enter a valid Start URL');
       return;
     }
     crawl.data.queue = [crawl.data.startURL.href];
+    crawl.data.depth[crawl.data.startURL.href] = 0;
   } else {
     const lines = urlListTextarea.value.split('\n');
     if (!crawl.data.startURL?.href) {
       try {
         crawl.data.startURL = new URL(lines[0]);
       } catch (e) {
-        console.log(e.message);
         return;
       }
     }
@@ -262,32 +342,65 @@ document.getElementById('crawlBtn').addEventListener('click', async () => {
     lines.forEach(item => {
       if (!item) return;
       const href = absoluteLink(item);
-      if (href) crawl.data.queue.push(href);
+      if (href) {
+        crawl.data.queue.push(href);
+        crawl.data.depth[href] = 0;
+      }
     });
   }
 
-  startOpfsWorkerIfNeeded();
-  performance.mark('crawl-started');
-  processQueue();
+  const hostname = crawl.data.startURL?.hostname || 'crawl';
+  const datetime = new Date().toLocaleString();
+  const crawlName = `${hostname} ${datetime}`;
+
+  setCrawlState('running');
+  document.getElementById('progressContainer').classList.remove('hidden');
+  document.getElementById('progressLabel').textContent = `0 / ${crawl.data.queue.length} pages (0%)`;
+  document.getElementById('progress').style.width = '0%';
+
+  sendBgMessage({
+    type: 'startCrawl',
+    crawlId: crawl.id,
+    name: crawlName,
+    settings: {
+      ...crawl.settings,
+      opfsEnabled: !!(opfsSettings.enabled && opfsSettings.rootDir),
+      opfsRootDir: opfsSettings.rootDir || 'crawl_archive',
+    },
+    queue: [...crawl.data.queue],
+    depth: { ...crawl.data.depth },
+    outboundOnly: {},
+  });
+});
+
+document.getElementById('pauseBtn').addEventListener('click', () => {
+  if (crawlPaused) {
+    crawlPaused = false;
+    setCrawlState('running');
+    sendBgMessage({ type: 'resumeCrawl' });
+  } else {
+    crawlPaused = true;
+    setCrawlState('paused');
+    sendBgMessage({ type: 'pauseCrawl' });
+  }
+});
+
+document.getElementById('stopBtn').addEventListener('click', () => {
+  crawlPaused = false;
+  sendBgMessage({ type: 'stopCrawl' });
+  setCrawlState('idle');
+  // crawlComplete message from SW will trigger table render with partial results
 });
 
 // ── Regex filter ───────────────────────────────────────────────────────────
 
-document.getElementById('predefinedRegex').addEventListener('click', e => {
-  const btn = e.target.closest('[data-regex]');
-  if (!btn) return;
-  document.getElementById('regexFilter').value = btn.dataset.regex;
-});
-
-document.getElementById('regexFilterBtn').addEventListener('click', e => {
-  const btn = e.target.closest('[data-type]');
-  if (!btn) return;
-  const str = document.getElementById('regexFilter').value.trim();
-  const re = new RegExp(str, 'i');
+function applyUrlListFilter(regexStr, type) {
+  if (!regexStr) return;
+  const re = new RegExp(regexStr, 'i');
   let queue = urlListTextarea.value.split('\n');
-  if (btn.dataset.type === 'include') {
+  if (type === 'include') {
     queue = queue.filter(u => re.test(u));
-  } else if (btn.dataset.type === 'exclude') {
+  } else if (type === 'exclude') {
     queue = queue.filter(u => !re.test(u));
   }
   crawl.data.queue = queue;
@@ -295,7 +408,41 @@ document.getElementById('regexFilterBtn').addEventListener('click', e => {
   urlListTextarea.value = queue.join('\n');
   updateUrlListCount();
   setProgressbar();
+}
+
+document.getElementById('predefinedRegex').addEventListener('click', e => {
+  const btn = e.target.closest('[data-regex]');
+  if (!btn) return;
+  const regex = btn.dataset.regex;
+  const type = btn.dataset.type;
+  document.getElementById('regexFilter').value = regex;
+  // Saved presets have a defined type → apply immediately
+  if (type) applyUrlListFilter(regex, type);
 });
+
+document.getElementById('regexFilterBtn').addEventListener('click', e => {
+  const btn = e.target.closest('[data-type]');
+  if (!btn) return;
+  applyUrlListFilter(document.getElementById('regexFilter').value.trim(), btn.dataset.type);
+});
+
+(async () => {
+  const { regexPresets = [] } = await chrome.storage.local.get('regexPresets');
+  if (!regexPresets.length) return;
+  const list = document.getElementById('regex-presets');
+  const divider = document.createElement('li');
+  divider.innerHTML = '<hr class="my-1 border-slate-100">';
+  list.appendChild(divider);
+  regexPresets.forEach(p => {
+    const li = document.createElement('li');
+    li.innerHTML = `<button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+      data-regex="${p.regex.replace(/"/g, '&quot;')}" data-type="${p.type}">
+      <span class="flex-1">${p.name}</span>
+      <span class="text-xs px-1.5 py-0.5 rounded-full font-medium ${p.type === 'include' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${p.type}</span>
+    </button>`;
+    list.appendChild(li);
+  });
+})();
 
 // ── Save / Load / Delete ───────────────────────────────────────────────────
 
@@ -317,6 +464,12 @@ function resolveSaveName(template) {
   }
   const datetime = new Date().toLocaleString();
   return template.replace(/\{hostname\}/g, hostname).replace(/\{datetime\}/g, datetime);
+}
+
+function exportFilename(ext) {
+  return resolveSaveName('{hostname} {datetime}')
+    .replace(/[/\\:*?"<>|,]/g, '-')
+    .replace(/\s+/g, '_') + '.' + ext;
 }
 
 document.getElementById('loadModal').addEventListener('click', e => {
@@ -404,12 +557,12 @@ document.getElementById('tableSearch').addEventListener('input', function () {
       ],
     ]);
   } else {
-    table.clearFilter();
+    table.clearFilter(false);
   }
 });
 
 document.getElementById('exportCSVBtn').addEventListener('click', () => {
-  if (table) table.download('csv', 'crawl.csv');
+  if (table) table.download('csv', exportFilename('csv'));
 });
 
 document.getElementById('exportOpfsZipBtn').addEventListener('click', async () => {
@@ -424,17 +577,17 @@ document.getElementById('exportOpfsZipBtn').addEventListener('click', async () =
       files[name] = new Uint8Array(await (await handle.getFile()).arrayBuffer());
     }
     if (!Object.keys(files).length) {
-      alert('Keine OPFS-Dateien für diesen Crawl gefunden.');
+      alert('No OPFS files found for this crawl.');
       return;
     }
     const zipped = zipSync(files);
     const url = URL.createObjectURL(new Blob([zipped], { type: 'application/zip' }));
-    const a = Object.assign(document.createElement('a'), { href: url, download: `${crawlDirName}.zip` });
+    const a = Object.assign(document.createElement('a'), { href: url, download: exportFilename('zip') });
     a.click();
     URL.revokeObjectURL(url);
   } catch (e) {
     console.error('ZIP export failed:', e);
-    alert(`ZIP export fehlgeschlagen: ${e.message}`);
+    alert(`ZIP export failed: ${e.message}`);
   }
 });
 
@@ -502,7 +655,10 @@ async function loadCrawl(id) {
   if (crawl.data?.startURL) {
     try { crawl.data.startURL = new URL(crawl.data.startURL); } catch {}
   }
-  if (crawl.data?.results) parseData();
+  if (crawl.data?.results) {
+    document.getElementById('resultsArea').classList.remove('hidden');
+    parseData();
+  }
   if (crawl.settings) {
     Object.keys(crawl.settings).forEach(key => {
       const el = document.getElementById(key);
@@ -528,6 +684,12 @@ async function saveCrawl(name) {
 
 async function deleteCrawl(id) {
   await crawlDB.remove(id);
+  try {
+    const { opfsSettings = {} } = await chrome.storage.local.get('opfsSettings');
+    const rootDirName = opfsSettings.rootDir || 'crawl_archive';
+    const rootDir = await (await navigator.storage.getDirectory()).getDirectoryHandle(rootDirName);
+    await rootDir.removeEntry(id, { recursive: true });
+  } catch {}
   await getCrawlList();
   document.getElementById('deleteModal').close();
 }
@@ -544,8 +706,15 @@ function setProgressbar() {
 
   document.getElementById('progressContainer').classList.remove('hidden');
   const el = document.getElementById('progress');
+  const label = document.getElementById('progressLabel');
   el.style.width = `${pct}%`;
-  el.textContent = `${crawledCount} / ${total} pages (${pct}%)`;
+  if (crawlPaused) {
+    label.textContent = `${crawledCount} / ${total} pages — paused`;
+    el.style.backgroundColor = '#94a3b8';
+  } else {
+    label.textContent = `${crawledCount} / ${total} pages (${pct}%)`;
+    el.style.backgroundColor = '';
+  }
 }
 
 // ── Initialize (spider one page to get its links) ──────────────────────────
@@ -606,14 +775,13 @@ function parseFollowDirective(content) {
   return content.toLowerCase().split(/[\s,]+/).find(t => FOLLOW_TOKENS.has(t)) || null;
 }
 
-function extractInternalLinks(doc, currentUrl, metaRobots = '', xRobotsTag = '') {
+function extractInternalLinks(doc, currentUrl, metaRobots = '', xRobotsTag = '', filterHost = crawl.data.startURL?.hostname) {
   const metaFollow   = parseFollowDirective(metaRobots);
   const headerFollow = parseFollowDirective(xRobotsTag);
   const pageFollow   = metaFollow ?? headerFollow;
   const pageSource   = metaFollow ? 'meta' : (headerFollow ? 'header' : null);
 
   const seen = new Map();
-  const startHost = crawl.data.startURL?.hostname;
 
   [...doc.links].forEach(link => {
     const rawHref = link.getAttribute('href');
@@ -622,7 +790,7 @@ function extractInternalLinks(doc, currentUrl, metaRobots = '', xRobotsTag = '')
     try { resolved = new URL(rawHref, currentUrl); } catch { return; }
     if (resolved.protocol !== 'http:' && resolved.protocol !== 'https:') return;
     resolved.hash = '';
-    if (resolved.hostname !== startHost) return;
+    if (filterHost && resolved.hostname !== filterHost) return;
     const url = resolved.href;
     if (seen.has(url)) return;
 
@@ -736,39 +904,40 @@ function getArticleSchema(doc, href) {
     alternateHeadline: '',
   };
 
-  try {
-    [...doc.querySelectorAll('script[type="application/ld+json"]')].forEach(el => {
-      if (!el.textContent) return;
-      const obj = JSON.parse(el.textContent);
+  [...doc.querySelectorAll('script[type="application/ld+json"]')].forEach(el => {
+    if (!el.textContent) return;
+    let obj;
+    try {
+      obj = JSON.parse(el.textContent);
+    } catch {
+      return;
+    }
 
-      const publisher = getValues(obj, 'publisher')[0];
-      if (publisher?.['@type'] === 'Organization') schema.publisher = publisher.name;
+    const publisher = getValues(obj, 'publisher')[0];
+    if (publisher?.['@type'] === 'Organization') schema.publisher = publisher.name;
 
-      const headline = getValues(obj, 'headline')[0];
-      if (headline) schema.headline = headline;
+    const headline = getValues(obj, 'headline')[0];
+    if (headline) schema.headline = headline;
 
-      const altHeadline = getValues(obj, 'alternateHeadline')[0];
-      if (altHeadline) schema.alternateHeadline = altHeadline;
+    const altHeadline = getValues(obj, 'alternateHeadline')[0];
+    if (altHeadline) schema.alternateHeadline = altHeadline;
 
-      const dateModified = getValues(obj, 'dateModified')[0];
-      if (dateModified) schema.dateModified = dateModified;
+    const dateModified = getValues(obj, 'dateModified')[0];
+    if (dateModified) schema.dateModified = dateModified;
 
-      const datePublished = getValues(obj, 'datePublished')[0];
-      if (datePublished) schema.datePublished = datePublished;
+    const datePublished = getValues(obj, 'datePublished')[0];
+    if (datePublished) schema.datePublished = datePublished;
 
-      const authors = getValues(obj, 'author')[0];
-      if (Array.isArray(authors)) {
-        schema.authors = authors.map(a => a?.name).join(', ');
-      } else if (authors?.name) {
-        schema.authors = authors.name;
-      }
-      if (!schema.authors) {
-        schema.authors = extractAuthors(obj).join(', ');
-      }
-    });
-  } catch (e) {
-    console.error(`${e.message}: ${href}`);
-  }
+    const authors = getValues(obj, 'author')[0];
+    if (Array.isArray(authors)) {
+      schema.authors = authors.map(a => a?.name).join(', ');
+    } else if (authors?.name) {
+      schema.authors = authors.name;
+    }
+    if (!schema.authors) {
+      schema.authors = extractAuthors(obj).join(', ');
+    }
+  });
 
   return schema;
 }
@@ -786,6 +955,7 @@ function extractAuthors(data) {
 // ── Robots.txt ────────────────────────────────────────────────────────────
 
 const robotsCache = new Map();
+let robotsOverridesMap = {};
 let currentBotName = 'Googlebot';
 
 function extractBotName(ua) {
@@ -801,9 +971,21 @@ function extractBotName(ua) {
 
 function getRobotsTxt(origin) {
   if (robotsCache.has(origin)) return robotsCache.get(origin);
+  if (origin in robotsOverridesMap) {
+    const p = Promise.resolve(robotsOverridesMap[origin]);
+    robotsCache.set(origin, p);
+    return p;
+  }
   const promise = fetch(`${origin}/robots.txt`, { cache: 'no-cache', credentials: 'omit' })
     .then(r => r.ok ? r.text() : '')
-    .catch(() => '');
+    .catch(() => '')
+    .then(text => {
+      chrome.storage.local.get('robotsFetched', ({ robotsFetched = {} }) => {
+        robotsFetched[origin] = text;
+        chrome.storage.local.set({ robotsFetched });
+      });
+      return text;
+    });
   robotsCache.set(origin, promise);
   return promise;
 }
@@ -824,6 +1006,8 @@ async function fetchURL(link) {
   if ((crawl.data.alreadyFetched?.[link] ?? 0) > crawl.settings.maxRetries) return;
   crawl.data.alreadyFetched[link] = (crawl.data.alreadyFetched[link] || 0) + 1;
 
+  const isOutboundOnly = crawl.data.outboundOnly[link] ?? false;
+
   try { new URL(link); } catch (e) {
     console.error(`invalid URL: ${link}`);
     return;
@@ -835,21 +1019,31 @@ async function fetchURL(link) {
     crawl.data.results[link] = {
       href: link,
       crawlable,
+      isOutbound: isOutboundOnly || undefined,
+      depth: crawl.data.depth[link] ?? 0,
       fetch: { status: null, ok: false, timestamp: new Date().toISOString() },
     };
     return;
   }
 
+  const t0 = performance.now();
   const response = await fetch(link, {
     credentials: crawl.settings.credentials,
     cache: 'no-cache',
-  }).catch(e => console.error(`${e.message}: ${link}`));
+    signal: crawlAbortController?.signal,
+  }).catch(e => { if (e.name !== 'AbortError') console.error(`${e.message}: ${link}`); });
+
+  if (!response) return;
 
   if (!crawl.data.results[link]) crawl.data.results[link] = {};
+  crawl.data.results[link].href = link;
+  crawl.data.results[link].isOutbound = isOutboundOnly || undefined;
+  crawl.data.results[link].depth = crawl.data.depth[link] ?? 0;
   crawl.data.results[link].crawlable = crawlable;
   crawl.data.results[link].fetch = {
     timestamp: new Date().toISOString(),
     redirected: response?.redirected,
+    finalUrl: response?.redirected ? response.url : undefined,
     status: response?.status,
     statusText: response?.statusText,
     ok: response?.ok,
@@ -866,16 +1060,11 @@ async function fetchURL(link) {
 
   const buf = await response.arrayBuffer();
 
-  const perfEntries = performance.getEntriesByName(link, 'resource');
-  const perf = perfEntries.length > 0 ? perfEntries[perfEntries.length - 1] : null;
-  if (perf) {
-    Object.assign(crawl.data.results[link].fetch, {
-      duration: Math.round(perf.duration),
-      decodedBodySize: perf.decodedBodySize,
-      encodedBodySize: perf.encodedBodySize,
-      deliveryType: perf.deliveryType ?? '',
-    });
-  }
+  const duration = Math.round(performance.now() - t0);
+  const decodedBodySize = buf.byteLength;
+  const encodedBodySize = parseInt(response.headers.get('content-length') || '0', 10) || buf.byteLength;
+  const deliveryType = duration < 12 ? 'cache' : 'network';
+  Object.assign(crawl.data.results[link].fetch, { duration, decodedBodySize, encodedBodySize, deliveryType });
 
   const html = new TextDecoder(crawl.settings.charset).decode(buf);
   if (!html) {
@@ -896,19 +1085,41 @@ async function fetchURL(link) {
   const metadata = processPage(html, link);
   Object.assign(crawl.data.results[link], metadata);
 
+  const isHtml = (crawl.data.results[link].fetch?.contentType || '').includes('text/html');
+
   if (crawl.settings.crawlMode === 'recursive') {
     const totalCrawled = Object.keys(crawl.data.results).length;
-    if (totalCrawled < crawl.settings.maxPages) {
+    if (totalCrawled < crawl.settings.maxPages && isHtml) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
       const xRobotsTag = response?.headers.get('x-robots-tag') || '';
       crawl.data.results[link].links = extractInternalLinks(doc, link, crawl.data.results[link].robots || '', xRobotsTag);
       const newLinks = extractNewLinks(doc, link);
+      const parentDepth = crawl.data.depth[link] ?? 0;
       newLinks.forEach(newLink => {
+        const d = parentDepth + 1;
+        if (!(newLink in crawl.data.depth) || crawl.data.depth[newLink] > d) {
+          crawl.data.depth[newLink] = d;
+        }
         crawl.data.queue.push(newLink);
       });
       urlListTextarea.value = crawl.data.queue.join('\n');
       updateUrlListCount();
+      setProgressbar();
+    }
+  } else if (isHtml && !isOutboundOnly) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const xRobotsTag = response?.headers.get('x-robots-tag') || '';
+    crawl.data.results[link].links = extractInternalLinks(doc, link, crawl.data.results[link].robots || '', xRobotsTag, null);
+    if (crawl.settings.fetchOutbound) {
+      crawl.data.results[link].links.forEach(l => {
+        const outUrl = l.url;
+        if (!(outUrl in crawl.data.alreadyFetched) && !(outUrl in crawl.data.outboundOnly)) {
+          crawl.data.outboundOnly[outUrl] = true;
+          crawl.data.queue.push(outUrl);
+        }
+      });
       setProgressbar();
     }
   }
@@ -918,16 +1129,35 @@ async function fetchURL(link) {
 
 async function processQueue() {
   if (!crawl.data.queue) return;
+  if (crawlPaused) return;
   setProgressbar();
 
   function onDone() {
     fetchURLQueue.pop();
-    processQueue();
-    if (crawl.data.queue.length === 0 && fetchURLQueue.length === 0) {
-      performance.mark('crawl-ended');
+    if (!crawlPaused) processQueue();
+
+    const inFlightDone = fetchURLQueue.length === 0;
+    const queueEmpty = crawl.data.queue.length === 0;
+
+    // Paused and all in-flight drained → show intermediate results
+    if (inFlightDone && crawlPaused && !crawlStopped) {
+      document.getElementById('resultsArea').classList.remove('hidden');
       parseData();
-      opfsWorker?.terminate();
-      opfsWorker = null;
+    }
+
+    // All work done (natural completion or stop drain)
+    if (inFlightDone && queueEmpty && !crawlPaused) {
+      performance.mark('crawl-ended');
+      if (!crawlStopped) {
+        document.getElementById('resultsArea').classList.remove('hidden');
+        parseData();
+        opfsWorker?.terminate();
+        opfsWorker = null;
+      } else {
+        crawlStopped = false;
+      }
+      crawlPaused = false;
+      setCrawlState('idle');
     }
   }
 
@@ -1036,7 +1266,7 @@ async function appendSitemapLocations(xmlDoc) {
 
     const total = childUrls.length;
     let done = 0;
-    statusEl.textContent = `0 / ${total} Sitemaps geladen…`;
+    statusEl.textContent = `Loading 0 / ${total} sitemaps…`;
     statusEl.classList.remove('hidden');
 
     const settled = await Promise.allSettled(
@@ -1046,7 +1276,7 @@ async function appendSitemapLocations(xmlDoc) {
             ? r.blob().then(b => b.arrayBuffer()).then(buf => decompress(buf, 'gzip'))
             : r.text())
           .then(content => {
-            statusEl.textContent = `${++done} / ${total} Sitemaps geladen…`;
+            statusEl.textContent = `Loading ${++done} / ${total} sitemaps…`;
             return [...parseXMLSitemap(content).getElementsByTagName('loc')]
               .map(loc => loc.textContent.trim())
               .filter(Boolean);
@@ -1057,7 +1287,7 @@ async function appendSitemapLocations(xmlDoc) {
 
     const allUrls = settled.flatMap(r => r.status === 'fulfilled' ? r.value : []);
     if (allUrls.length) { urlListTextarea.value += allUrls.join('\n') + '\n'; updateUrlListCount(); }
-    statusEl.textContent = `${allUrls.length} URLs aus ${total} Sitemaps übernommen`;
+    statusEl.textContent = `${allUrls.length} URLs loaded from ${total} sitemaps`;
     setTimeout(() => statusEl.classList.add('hidden'), 3000);
 
   } else {
@@ -1083,47 +1313,52 @@ function parseXMLSitemap(content) {
 // ── Table ──────────────────────────────────────────────────────────────────
 
 function parseData() {
+  const TF = { tristate: true };
   const columns = [
     {
       title: 'url', field: 'href', visible: true, sorter: 'string', minWidth: 380, widthGrow: 1,
-      tooltip: true,
-      formatter: urlFormatter,
+      tooltip: true, formatter: urlFormatter, headerFilter: 'input',
     },
-    { title: 'status',          field: 'fetch_status',           visible: true,  sorter: 'number', width: 80, hozAlign: 'right' },
-    { title: 'duration (ms)',   field: 'fetch_duration',         visible: true,  sorter: 'number', hozAlign: 'right' },
-    { title: 'redirected',      field: 'fetch_redirected',       visible: true,  sorter: 'boolean' },
-    { title: 'encoded size',    field: 'fetch_encodedBodySize',  visible: true,  sorter: 'number', hozAlign: 'right' },
-    { title: 'canonical',       field: 'canonical',              visible: false, sorter: 'string', minWidth: 150 },
-    { title: 'title',           field: 'title',                  visible: false, sorter: 'string' },
-    { title: 'description',     field: 'description',            visible: false, sorter: 'string' },
-    { title: 'keyword',         field: 'keyword',                visible: false, sorter: 'string' },
-    { title: 'robots',          field: 'robots',                 visible: false, sorter: 'string' },
-    { title: 'h1',              field: 'h1',                     visible: false, sorter: 'string' },
-    { title: 'content-type',    field: 'fetch_contentType',      visible: false, sorter: 'string' },
-    { title: 'decoded size',    field: 'fetch_decodedBodySize',  visible: false, sorter: 'number', hozAlign: 'right' },
-    { title: 'deliveryType',    field: 'fetch_deliveryType',     visible: false, sorter: 'string' },
-    { title: 'timestamp',       field: 'fetch_timestamp',        visible: false, sorter: 'string' },
-    { title: 'ok',              field: 'fetch_ok',               visible: false, sorter: 'boolean', width: 70 },
-    { title: 'og:image',        field: 'og_image',               visible: false, sorter: 'string' },
-    { title: 'og:title',        field: 'og_title',               visible: false, sorter: 'string' },
-    { title: 'og:site',         field: 'og_site_name',           visible: false, sorter: 'string' },
-    { title: 'og:description',  field: 'og_description',         visible: false, sorter: 'string' },
-    { title: 'publisher',       field: 'schema_publisher',       visible: false, sorter: 'string' },
-    { title: 'dateModified',    field: 'schema_dateModified',    visible: false, sorter: 'string' },
-    { title: 'datePublished',   field: 'schema_datePublished',   visible: false, sorter: 'string' },
-    { title: 'authors',         field: 'schema_authors',         visible: false, sorter: 'string' },
-    { title: 'headline',        field: 'schema_headline',        visible: false, sorter: 'string' },
-    { title: 'altHeadline',     field: 'schema_alternateHeadline', visible: false, sorter: 'string' },
-    { title: 'content',         field: 'content',                visible: false, sorter: 'string' },
-    { title: 'crawlable',      field: 'crawlable',              visible: true,  sorter: 'boolean', width: 90 },
-    { title: 'outbound links', field: 'outbound_count',         visible: false, sorter: 'number',  hozAlign: 'right', width: 110 },
-    { title: 'inbound links',  field: 'inbound_count',          visible: false, sorter: 'number',  hozAlign: 'right', width: 100 },
-    { title: 'clicks',          field: 'clicks',                 visible: false, sorter: 'number', hozAlign: 'right' },
-    { title: 'impressions',     field: 'impressions',            visible: false, sorter: 'number', hozAlign: 'right' },
+    { title: 'status',          field: 'fetch_status',           visible: true,  sorter: 'number', width: 80,  hozAlign: 'right', headerFilter: 'input' },
+    { title: 'depth',           field: 'depth',                  visible: true,  sorter: 'number', width: 70,  hozAlign: 'right', headerFilter: 'input' },
+    { title: 'duration (ms)',   field: 'fetch_duration',         visible: true,  sorter: 'number', hozAlign: 'right', headerFilter: 'input' },
+    { title: 'redirected',      field: 'fetch_redirected',       visible: true,  sorter: 'boolean', headerFilter: 'tickCross', headerFilterParams: TF },
+    { title: 'redirect target', field: 'fetch_finalUrl',         visible: false, sorter: 'string', minWidth: 200, headerFilter: 'input' },
+    { title: 'encoded size',    field: 'fetch_encodedBodySize',  visible: true,  sorter: 'number', hozAlign: 'right', headerFilter: 'input' },
+    { title: 'canonical',       field: 'canonical',              visible: false, sorter: 'string', minWidth: 150, headerFilter: 'input' },
+    { title: 'title',           field: 'title',                  visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'description',     field: 'description',            visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'keyword',         field: 'keyword',                visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'robots',          field: 'robots',                 visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'h1',              field: 'h1',                     visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'content-type',    field: 'fetch_contentType',      visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'decoded size',    field: 'fetch_decodedBodySize',  visible: false, sorter: 'number', hozAlign: 'right', headerFilter: 'input' },
+    { title: 'deliveryType',    field: 'fetch_deliveryType',     visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'timestamp',       field: 'fetch_timestamp',        visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'ok',              field: 'fetch_ok',               visible: false, sorter: 'boolean', width: 70, headerFilter: 'tickCross', headerFilterParams: TF },
+    { title: 'og:image',        field: 'og_image',               visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'og:title',        field: 'og_title',               visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'og:site',         field: 'og_site_name',           visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'og:description',  field: 'og_description',         visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'publisher',       field: 'schema_publisher',       visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'dateModified',    field: 'schema_dateModified',    visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'datePublished',   field: 'schema_datePublished',   visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'authors',         field: 'schema_authors',         visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'headline',        field: 'schema_headline',        visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'altHeadline',     field: 'schema_alternateHeadline', visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'content',         field: 'content',                visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'outbound',        field: 'isOutbound',             visible: true,  sorter: 'boolean', width: 80, headerFilter: 'tickCross', headerFilterParams: TF },
+    { title: 'crawlable',       field: 'crawlable',              visible: true,  sorter: 'boolean', width: 90, headerFilter: 'tickCross', headerFilterParams: TF },
+    { title: 'outbound links',  field: 'outbound_count',  visible: false, sorter: 'number', hozAlign: 'right', width: 110, headerFilter: 'input' },
+    { title: 'inbound links',   field: 'inbound_count',   visible: false, sorter: 'number', hozAlign: 'right', width: 100, headerFilter: 'input' },
+    { title: 'broken outbound', field: 'broken_outbound', visible: false, sorter: 'number', hozAlign: 'right', width: 120, headerFilter: 'input' },
+    { title: 'clicks',          field: 'clicks',                 visible: false, sorter: 'number', hozAlign: 'right', headerFilter: 'input' },
+    { title: 'impressions',     field: 'impressions',            visible: false, sorter: 'number', hozAlign: 'right', headerFilter: 'input' },
     {
       title: 'html',
       field: 'opfs_path',
       visible: document.getElementById('opfsEnabled').checked,
+      download: false,
       headerSort: false,
       formatter: (cell) => {
         const path = cell.getValue();
@@ -1154,14 +1389,22 @@ function parseData() {
   ];
 
   const inboundCount = {};
+  const brokenOutbound = {};
   Object.values(crawl.data.results).forEach(r => {
-    (r.links || []).forEach(t => { inboundCount[t.url] = (inboundCount[t.url] || 0) + 1; });
+    let broken = 0;
+    (r.links || []).forEach(t => {
+      inboundCount[t.url] = (inboundCount[t.url] || 0) + 1;
+      const s = crawl.data.results[t.url]?.fetch?.status;
+      if (s != null && s >= 400) broken++;
+    });
+    if (broken > 0) brokenOutbound[r.href] = broken;
   });
 
   const dataArray = JSON.parse(JSON.stringify(Object.values(crawl.data.results)));
   dataArray.forEach(r => {
-    r.outbound_count = r.links?.length ?? null;
-    r.inbound_count  = inboundCount[r.href] ?? null;
+    r.outbound_count   = r.links?.length ?? null;
+    r.inbound_count    = inboundCount[r.href] ?? null;
+    r.broken_outbound  = brokenOutbound[r.href] ?? null;
     delete r.links;
     dict2flatarray(r);
   });
@@ -1178,7 +1421,19 @@ function parseData() {
     paginationSize: 50,
     paginationSizeSelector: [25, 50, 100, true],
     movableColumns: true,
+    headerFilterLiveFilterDelay: 300,
     columns,
+    rowFormatter: (row) => {
+      const s = row.getData().fetch_status;
+      const el = row.getElement();
+      el.style.removeProperty('background-color');
+      if (s >= 400) el.style.backgroundColor = '#fef2f2';
+      else if (s >= 300) el.style.backgroundColor = '#fffbeb';
+    },
+  });
+  table.on('rowClick', (e, row) => {
+    if (e.target.tagName === 'BUTTON') return;
+    showURLDetail(row.getData().href);
   });
 }
 
@@ -1213,6 +1468,247 @@ function showLinksExplorer() {
 }
 
 document.getElementById('linksBtn').addEventListener('click', showLinksExplorer);
+
+// ── URL detail view ────────────────────────────────────────────────────────
+
+function showURLDetail(href) {
+  const result = crawl.data.results[href];
+  if (!result) return;
+
+  document.getElementById('detailModalTitle').textContent = result.title || href;
+  const urlEl = document.getElementById('detailModalUrl');
+  urlEl.href = href;
+  urlEl.textContent = href;
+
+  const body = document.getElementById('detailBody');
+  body.innerHTML = '';
+
+  const SKIP = new Set(['href', 'links', 'paragraphs']);
+
+  const makeGrid = () => {
+    const g = document.createElement('div');
+    g.className = 'grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 text-sm';
+    return g;
+  };
+  const addRow = (grid, label, val) => {
+    if (val === null || val === undefined || val === '') return false;
+    grid.insertAdjacentHTML('beforeend',
+      `<span class="text-slate-400 whitespace-nowrap">${label}</span><span class="text-slate-700 break-all">${val}</span>`);
+    return true;
+  };
+  const addSection = (title, pairs) => {
+    const grid = makeGrid();
+    let any = false;
+    pairs.forEach(([k, v]) => { if (addRow(grid, k, v)) any = true; });
+    if (!any) return;
+    if (title) {
+      const h = document.createElement('h3');
+      h.className = 'text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2';
+      h.textContent = title;
+      body.appendChild(h);
+    }
+    body.appendChild(grid);
+  };
+
+  // Redirect chain visualization
+  const finalUrl = result.fetch?.finalUrl;
+  if (finalUrl) {
+    const div = document.createElement('div');
+    div.className = 'space-y-1.5';
+    div.innerHTML = `
+      <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Redirect</h3>
+      <div class="flex flex-col gap-1 text-sm font-mono">
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400 text-xs w-8 text-right shrink-0">${result.fetch.status ?? ''}</span>
+          <span class="text-slate-500 break-all">${href}</span>
+        </div>
+        <div class="flex items-center gap-2 pl-2">
+          <span class="text-slate-300 text-xs">↳</span>
+          <a href="${finalUrl}" target="_blank"
+             class="text-blue-600 hover:underline break-all">${finalUrl}</a>
+        </div>
+      </div>`;
+    body.appendChild(div);
+  }
+
+  // Root-level scalar fields first
+  addSection(null, Object.entries(result)
+    .filter(([k, v]) => !SKIP.has(k) && (typeof v !== 'object' || v === null))
+    .map(([k, v]) => [k, v != null ? String(v) : '']));
+
+  // Nested objects as labelled sections
+  const FETCH_SKIP = new Set(['finalUrl']);
+  Object.entries(result).forEach(([key, value]) => {
+    if (SKIP.has(key) || !value || typeof value !== 'object' || Array.isArray(value)) return;
+    addSection(key, Object.entries(value)
+      .filter(([k]) => key !== 'fetch' || !FETCH_SKIP.has(k))
+      .map(([k, v]) => [k, v != null ? String(v) : '']));
+  });
+
+  const linkRowFormatter = (row) => {
+    const s = row.getData().status;
+    const el = row.getElement();
+    el.style.removeProperty('background-color');
+    if (s >= 400) el.style.backgroundColor = '#fef2f2';
+    else if (s >= 300) el.style.backgroundColor = '#fffbeb';
+  };
+
+  const outbound = (result.links || []).map(l => ({
+    ...l, status: crawl.data.results[l.url]?.fetch?.status ?? null,
+  }));
+  document.getElementById('detailOutboundCount').textContent = `(${outbound.length})`;
+  if (detailOutboundTable) {
+    detailOutboundTable.replaceData(outbound);
+  } else {
+    detailOutboundTable = new Tabulator('#detailOutboundTable', {
+      data: outbound, layout: 'fitColumns', pagination: true, paginationSize: 25,
+      paginationSizeSelector: [25, 50, true],
+      rowFormatter: linkRowFormatter,
+      columns: [
+        { title: 'url', field: 'url', minWidth: 250, widthGrow: 1, tooltip: true, formatter: urlFormatter },
+        { title: 'status', field: 'status', width: 75, hozAlign: 'right' },
+        { title: 'follow', field: 'follow', width: 100 },
+        { title: 'directive', field: 'directive_source', width: 120 },
+      ],
+    });
+    detailOutboundTable.on('rowClick', (e, row) => {
+      const url = row.getData().url;
+      if (crawl.data.results[url]) showURLDetail(url);
+    });
+  }
+
+  const inbound = [];
+  Object.values(crawl.data.results).forEach(r => {
+    if (r.href === href) return;
+    (r.links || []).forEach(l => {
+      if (l.url === href) inbound.push({
+        url: r.href, follow: l.follow, directive_source: l.directive_source,
+        status: r.fetch?.status ?? null,
+      });
+    });
+  });
+  document.getElementById('detailInboundCount').textContent = `(${inbound.length})`;
+  if (detailInboundTable) {
+    detailInboundTable.replaceData(inbound);
+  } else {
+    detailInboundTable = new Tabulator('#detailInboundTable', {
+      data: inbound, layout: 'fitColumns', pagination: true, paginationSize: 25,
+      paginationSizeSelector: [25, 50, true],
+      rowFormatter: linkRowFormatter,
+      columns: [
+        { title: 'source', field: 'url', minWidth: 250, widthGrow: 1, tooltip: true, formatter: urlFormatter },
+        { title: 'status', field: 'status', width: 75, hozAlign: 'right' },
+        { title: 'follow', field: 'follow', width: 100 },
+        { title: 'directive', field: 'directive_source', width: 120 },
+      ],
+    });
+    detailInboundTable.on('rowClick', (e, row) => showURLDetail(row.getData().url));
+  }
+
+  document.getElementById('detailModal').showModal();
+}
+
+// ── Issues audit ──────────────────────────────────────────────────────────
+
+function buildIssues() {
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const list = document.getElementById('issuesList');
+  const results = Object.values(crawl.data.results);
+
+  if (results.length === 0) {
+    list.innerHTML = '<p class="text-sm text-slate-400 py-4">No crawl data yet — run a crawl first.</p>';
+    return;
+  }
+
+  const issues = [];
+
+  const broken = results.filter(r => (r.fetch?.status ?? 0) >= 400);
+  if (broken.length) issues.push({
+    title: 'Broken pages (4xx / 5xx)', severity: 'error',
+    items: broken.map(r => ({ href: r.href, detail: `${r.fetch.status} ${r.fetch.statusText || ''}`.trim() })),
+  });
+
+  const redirected = results.filter(r => r.fetch?.redirected);
+  if (redirected.length) issues.push({
+    title: 'Redirected pages', severity: 'warning',
+    items: redirected.map(r => ({ href: r.href, detail: String(r.fetch.status) })),
+  });
+
+  const notCrawlable = results.filter(r => r.crawlable === false);
+  if (notCrawlable.length) issues.push({
+    title: 'Blocked by robots.txt', severity: 'warning',
+    items: notCrawlable.map(r => ({ href: r.href, detail: r.robots || '' })),
+  });
+
+  const isHtml = r => (r.fetch?.contentType || '').includes('text/html');
+  const okHtml = r => (r.fetch?.status ?? 0) < 400 && isHtml(r);
+
+  const noTitle = results.filter(r => okHtml(r) && !r.title);
+  if (noTitle.length) issues.push({ title: 'Missing title', severity: 'warning', items: noTitle.map(r => ({ href: r.href, detail: '' })) });
+
+  const noH1 = results.filter(r => okHtml(r) && !r.h1);
+  if (noH1.length) issues.push({ title: 'Missing H1', severity: 'info', items: noH1.map(r => ({ href: r.href, detail: '' })) });
+
+  const noDesc = results.filter(r => okHtml(r) && !r.description);
+  if (noDesc.length) issues.push({ title: 'Missing meta description', severity: 'info', items: noDesc.map(r => ({ href: r.href, detail: '' })) });
+
+  const noCanonical = results.filter(r => okHtml(r) && !r.canonical);
+  if (noCanonical.length) issues.push({ title: 'Missing canonical', severity: 'info', items: noCanonical.map(r => ({ href: r.href, detail: '' })) });
+
+  const titleMap = {};
+  results.filter(isHtml).forEach(r => { if (r.title) (titleMap[r.title] = titleMap[r.title] || []).push(r.href); });
+  const dupTitles = Object.entries(titleMap).filter(([, urls]) => urls.length > 1);
+  if (dupTitles.length) {
+    const items = [];
+    dupTitles.forEach(([title, urls]) => urls.forEach(href => items.push({ href, detail: title })));
+    issues.push({ title: 'Duplicate titles', severity: 'warning', items });
+  }
+
+  const brokenLinks = [];
+  results.forEach(r => {
+    (r.links || []).forEach(l => {
+      const s = crawl.data.results[l.url]?.fetch?.status;
+      if (s != null && s >= 400) brokenLinks.push({ href: r.href, detail: `→ ${l.url} (${s})` });
+    });
+  });
+  if (brokenLinks.length) issues.push({ title: 'Pages with broken outbound links', severity: 'error', items: brokenLinks });
+
+  list.innerHTML = '';
+
+  if (issues.length === 0) {
+    list.innerHTML = '<p class="text-sm text-green-600 py-4">No issues found.</p>';
+    return;
+  }
+
+  const badge = { error: 'bg-red-100 text-red-700', warning: 'bg-amber-100 text-amber-700', info: 'bg-slate-100 text-slate-500' };
+  const dot   = { error: 'bg-red-500',              warning: 'bg-amber-400',                info: 'bg-slate-400' };
+
+  issues.forEach(({ title, severity, items }) => {
+    const section = document.createElement('details');
+    section.className = 'border border-slate-200 rounded-lg overflow-hidden';
+    section.innerHTML = `
+      <summary class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 select-none [list-style:none] [&::-webkit-details-marker]:hidden">
+        <span class="w-2 h-2 rounded-full flex-shrink-0 ${dot[severity]}"></span>
+        <span class="text-sm font-medium flex-1">${esc(title)}</span>
+        <span class="text-xs px-2 py-0.5 rounded-full ${badge[severity]}">${items.length}</span>
+      </summary>
+      <div class="border-t border-slate-100 divide-y divide-slate-100 max-h-64 overflow-y-auto">
+        ${items.map(({ href, detail }) => `
+          <div class="flex items-baseline gap-3 px-4 py-2 hover:bg-slate-50 cursor-pointer issue-row" data-href="${esc(href)}">
+            <span class="text-xs text-slate-700 break-all flex-1">${esc(href)}</span>
+            ${detail ? `<span class="text-xs text-slate-400 shrink-0 max-w-[40%] truncate" title="${esc(detail)}">${esc(detail)}</span>` : ''}
+          </div>`).join('')}
+      </div>`;
+    list.appendChild(section);
+  });
+
+  list.querySelectorAll('.issue-row').forEach(row => {
+    row.addEventListener('click', () => {
+      switchTab('crawl');
+      showURLDetail(row.dataset.href);
+    });
+  });
+}
 
 document.getElementById('linksSearch').addEventListener('input', function () {
   if (!linksTable) return;
@@ -1258,110 +1754,153 @@ function switchTab(tab) {
   document.getElementById('panelCrawl').classList.toggle('hidden', tab !== 'crawl');
   document.getElementById('panelSchedules').classList.toggle('hidden', tab !== 'schedules');
   document.getElementById('panelLog').classList.toggle('hidden', tab !== 'log');
+  document.getElementById('panelIssues').classList.toggle('hidden', tab !== 'issues');
   if (tab === 'schedules') loadSchedules();
+  if (tab === 'issues') buildIssues();
 }
 
-function loadSchedules() {
-  chrome.storage.local.get('schedules', ({ schedules = {} }) => renderSchedules(schedules));
+async function loadSchedules() {
+  const { schedules = {} } = await chrome.storage.local.get('schedules');
+  await renderSchedules(schedules);
 }
 
-function renderSchedules(schedules) {
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function intervalLabel(minutes) {
+  if (minutes === 60) return 'Hourly';
+  if (minutes === 1440) return 'Daily';
+  if (minutes === 10080) return 'Weekly';
+  if (minutes < 1440) return `Every ${minutes / 60}h`;
+  return `Every ${minutes / 1440}d`;
+}
+
+async function renderSchedules(schedules) {
   const list = document.getElementById('scheduleList');
   const entries = Object.values(schedules);
   if (entries.length === 0) {
     list.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">no schedules yet</p>';
     return;
   }
-  const unitLabel = { minutes: 'min', hours: 'h', days: 'd' };
-  list.innerHTML = entries.map(s => {
-    const displayName = esc(s.summary?.name || s.nameTemplate || '–');
 
-    const src = s.sources || {};
-    const sourceParts = [];
-    if (src.spiderUrl) sourceParts.push(`spider: ${esc(src.spiderUrl)}`);
-    if (src.urlList) {
-      const n = src.urlList.split('\n').map(l => l.trim()).filter(Boolean).length;
-      sourceParts.push(`${n} URL${n !== 1 ? 's' : ''}`);
-    }
-    if (src.sitemapUrl) sourceParts.push(`sitemap: ${esc(src.sitemapUrl)}`);
-    const sourceSummary = sourceParts.join(' · ') || esc(s.url || '–');
+  // Fetch live next-run times from alarm API
+  const nextRunMap = {};
+  await Promise.all(entries.map(async s => {
+    if (!s.enabled) { nextRunMap[s.id] = '—'; return; }
+    try {
+      const alarm = await chrome.alarms.get(`cron-${s.id}`);
+      nextRunMap[s.id] = alarm ? new Date(alarm.scheduledTime).toLocaleString() : '—';
+    } catch { nextRunMap[s.id] = '—'; }
+  }));
 
-    const flt = s.filter;
-    const filterLabel = flt?.regex && flt?.type
-      ? ` · ${flt.type}: <code class="font-mono">${esc(flt.regex)}</code>`
-      : '';
+  list.innerHTML = `
+    <div class="border border-slate-200 rounded-lg overflow-hidden">
+      <table class="w-full text-sm border-collapse">
+        <thead class="bg-slate-50">
+          <tr class="border-b border-slate-200">
+            <th class="text-left py-2.5 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Property</th>
+            <th class="text-left py-2.5 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Interval</th>
+            <th class="text-left py-2.5 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Last run</th>
+            <th class="text-left py-2.5 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Next run</th>
+            <th class="text-left py-2.5 px-4 text-xs font-medium text-slate-500 uppercase tracking-wide">Status</th>
+            <th class="py-2.5 px-4"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${entries.map(s => {
+            const src = s.sources || {};
+            const property = s.summary?.name
+              || src.spiderUrl || src.sitemapUrl
+              || (src.urlList ? (src.urlList.split('\n').find(l => l.trim()) || '') : '')
+              || s.nameTemplate || '–';
 
-    let lastLabel;
-    if (s.running) {
-      lastLabel = '<span class="text-blue-500 font-medium animate-pulse">crawling…</span>';
-    } else if (s.summary) {
-      const t = new Date(s.summary.timestamp).toLocaleString();
-      lastLabel = `<span class="text-green-600 font-medium">${s.summary.ok} ok</span>` +
-        (s.summary.errors ? ` · <span class="text-red-500 font-medium">${s.summary.errors} err</span>` : '') +
-        ` / ${s.summary.total} · ${t}`;
-    } else {
-      lastLabel = 'not yet run';
-    }
+            const freq = intervalLabel(s.intervalMinutes || 1440);
+            const dayPart = s.intervalMinutes === 10080 ? ` on ${DAY_NAMES[s.dayOfWeek ?? 1]}` : '';
+            const interval = `${freq}${dayPart} at ${s.timeStr || '00:00'}`;
 
-    return `<div class="border border-slate-200 rounded-lg p-4 space-y-2">
-      <div class="flex items-start justify-between gap-3">
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-medium text-slate-700 truncate">${displayName}</span>
-            ${s.running ? '<span class="inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0"></span>' : ''}
-          </div>
-          <div class="text-xs text-slate-400 truncate">${sourceSummary}${filterLabel}</div>
-          <div class="text-xs text-slate-500">Mode: ${esc(s.crawlMode || 'list')}${s.crawlMode === 'recursive' ? ` (max ${s.maxPages || 500} p.)` : ''} · every ${s.interval} ${unitLabel[s.unit] ?? s.unit}</div>
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
-          ${s.summary?.crawlKey ? `<button class="schedule-load px-2 py-1 text-xs border border-blue-300 rounded hover:bg-blue-50 text-blue-600" data-key="${s.summary.crawlKey}">load</button>` : ''}
-          <button class="schedule-run px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed"
-            data-id="${s.id}" ${s.running ? 'disabled' : ''}>run now</button>
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
-            <input type="checkbox" class="schedule-toggle rounded border-slate-300"
-              data-id="${s.id}" ${s.enabled ? 'checked' : ''} />
-            <span class="text-xs text-slate-500">on</span>
-          </label>
-          <button class="schedule-delete text-slate-300 hover:text-red-500 text-lg leading-none"
-            data-id="${s.id}">&times;</button>
-        </div>
-      </div>
-      <div class="text-xs text-slate-400 border-t border-slate-100 pt-2">${lastLabel}</div>
+            const lastRun = s.lastRun
+              ? new Date(s.lastRun).toLocaleString()
+              : '—';
+            const lastStats = s.summary && !s.running
+              ? ` <span class="text-slate-400">(${s.summary.ok}/${s.summary.total} ok)</span>`
+              : '';
+
+            const nextRun = nextRunMap[s.id] || '—';
+
+            let statusBadge;
+            if (s.running) {
+              statusBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse inline-block"></span>running</span>`;
+            } else if (s.enabled) {
+              statusBadge = '<span class="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700">active</span>';
+            } else {
+              statusBadge = '<span class="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-500">paused</span>';
+            }
+
+            return `<tr class="border-b border-slate-100 hover:bg-slate-50" data-id="${esc(s.id)}">
+              <td class="py-3 px-4 text-slate-700 max-w-xs">
+                <div class="truncate text-xs font-medium" title="${esc(property)}">${esc(property)}</div>
+              </td>
+              <td class="py-3 px-4 text-slate-600 whitespace-nowrap text-xs">${esc(interval)}</td>
+              <td class="py-3 px-4 text-slate-500 whitespace-nowrap text-xs">${esc(lastRun)}${lastStats}</td>
+              <td class="py-3 px-4 text-slate-500 whitespace-nowrap text-xs">${esc(nextRun)}</td>
+              <td class="py-3 px-4" data-status-id="${esc(s.id)}">${statusBadge}</td>
+              <td class="py-3 px-4">
+                <div class="flex items-center gap-1.5 justify-end">
+                  ${s.summary?.crawlKey ? `<button class="schedule-load text-xs px-2 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-50" data-key="${esc(s.summary.crawlKey)}" title="Load last result">↓</button>` : ''}
+                  <button class="schedule-run text-xs px-2 py-1 border border-slate-200 rounded text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                    data-id="${esc(s.id)}" ${s.running ? 'disabled' : ''} title="Run now">⚡</button>
+                  <button class="schedule-toggle text-xs px-2 py-1 border rounded ${s.enabled ? 'border-amber-200 text-amber-600 hover:bg-amber-50' : 'border-green-200 text-green-600 hover:bg-green-50'}"
+                    data-id="${esc(s.id)}" data-enabled="${s.enabled}">${s.enabled ? 'pause' : 'resume'}</button>
+                  <button class="schedule-delete text-xs px-2 py-1 border border-slate-200 rounded text-slate-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50"
+                    data-id="${esc(s.id)}" title="Delete">✕</button>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
     </div>`;
-  }).join('');
 
   list.querySelectorAll('.schedule-load').forEach(btn => {
-    btn.addEventListener('click', function () {
+    btn.addEventListener('click', function() {
       loadCrawl(this.dataset.key);
       switchTab('crawl');
     });
   });
+
   list.querySelectorAll('.schedule-run').forEach(btn => {
-    btn.addEventListener('click', function () {
-      const label = this.textContent;
-      this.textContent = '…';
+    btn.addEventListener('click', function() {
       this.disabled = true;
-      chrome.runtime.sendMessage({ action: 'runNow', id: this.dataset.id }, () => {
-        this.textContent = label;
-        this.disabled = false;
+      this.innerHTML = '<span class="inline-block animate-spin leading-none">⟳</span>';
+      chrome.runtime.sendMessage({ type: 'runCronJob', jobId: this.dataset.id }, () => {
+        loadSchedules();
       });
     });
   });
-  list.querySelectorAll('.schedule-toggle').forEach(cb => {
-    cb.addEventListener('change', function () {
+
+  list.querySelectorAll('.schedule-toggle').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const enabled = this.dataset.enabled === 'true';
       chrome.storage.local.get('schedules', ({ schedules = {} }) => {
         if (!schedules[this.dataset.id]) return;
-        schedules[this.dataset.id].enabled = this.checked;
+        schedules[this.dataset.id].enabled = !enabled;
         chrome.runtime.sendMessage({ action: 'setSchedule', schedule: schedules[this.dataset.id] });
+        loadSchedules();
       });
     });
   });
+
   list.querySelectorAll('.schedule-delete').forEach(btn => {
-    btn.addEventListener('click', function () {
+    btn.addEventListener('click', function() {
       chrome.runtime.sendMessage({ action: 'deleteSchedule', id: this.dataset.id }, loadSchedules);
     });
   });
 }
+
+document.getElementById('scheduleInterval').addEventListener('change', function() {
+  document.getElementById('scheduleDayOfWeekWrap').style.display =
+    this.value === '10080' ? '' : 'none';
+});
 
 document.getElementById('addScheduleBtn').addEventListener('click', () => {
   const nameTemplate = document.getElementById('scheduleNameTemplate').value.trim() || '{hostname} {datetime}';
@@ -1370,24 +1909,20 @@ document.getElementById('addScheduleBtn').addEventListener('click', () => {
   const sitemapUrl = document.getElementById('scheduleSitemapUrl').value.trim();
   const filterRegex = document.getElementById('scheduleFilterRegex').value.trim();
   const filterType = document.getElementById('scheduleFilterType').value;
-  const interval = parseInt(document.getElementById('scheduleInterval').value, 10);
-  const unit = document.getElementById('scheduleUnit').value;
+  const intervalMinutes = parseInt(document.getElementById('scheduleInterval').value, 10);
+  const timeStr = document.getElementById('scheduleTime').value || '00:00';
+  const dayOfWeek = parseInt(document.getElementById('scheduleDayOfWeek').value, 10);
   const crawlMode = document.getElementById('scheduleCrawlMode').value;
   const maxPages = parseInt(document.getElementById('scheduleMaxPages').value, 10) || 500;
 
-  if (!interval || interval < 1) return;
   if (!spiderUrl && !urlList && !sitemapUrl) return;
-
-  const intervalMinutes = unit === 'minutes' ? Math.max(1, interval)
-    : unit === 'hours' ? interval * 60
-    : interval * 1440;
 
   const schedule = {
     id: `schedule-${Date.now()}`,
     nameTemplate,
-    interval,
-    unit,
     intervalMinutes,
+    timeStr,
+    dayOfWeek,
     enabled: true,
     createdAt: new Date().toISOString(),
     sources: { spiderUrl, urlList, sitemapUrl },
@@ -1405,6 +1940,9 @@ document.getElementById('addScheduleBtn').addEventListener('click', () => {
     document.getElementById('scheduleSitemapUrl').value = '';
     document.getElementById('scheduleFilterRegex').value = '';
     document.getElementById('scheduleFilterType').value = '';
+    document.getElementById('scheduleInterval').value = '1440';
+    document.getElementById('scheduleTime').value = '03:00';
+    document.getElementById('scheduleDayOfWeekWrap').style.display = 'none';
     document.getElementById('scheduleCrawlMode').value = 'list';
     document.getElementById('scheduleMaxPages').value = '500';
     loadSchedules();
@@ -1413,7 +1951,7 @@ document.getElementById('addScheduleBtn').addEventListener('click', () => {
 
 chrome.storage.onChanged.addListener(changes => {
   if (changes.schedules && !document.getElementById('panelSchedules').classList.contains('hidden')) {
-    renderSchedules(changes.schedules.newValue || {});
+    renderSchedules(changes.schedules.newValue || {}); // async, fire-and-forget
   }
 });
 
@@ -1473,6 +2011,95 @@ new PerformanceObserver(list => {
     if (entry.initiatorType === 'fetch') appendLogEntry(entry);
   }
 }).observe({ type: 'resource', buffered: true });
+
+// ── Background port ────────────────────────────────────────────────────────
+
+let bgPort = null;
+
+function connectBgPort() {
+  bgPort = chrome.runtime.connect({ name: 'dragon-ui' });
+
+  bgPort.onMessage.addListener(async msg => {
+    if (msg.type === 'crawlProgress') {
+      updateProgressFromSW(msg);
+    } else if (msg.type === 'crawlComplete') {
+      await loadAndRenderCrawl(msg.crawlKey);
+      await getCrawlList();
+    } else if (msg.type === 'error') {
+      showToast(msg.message || 'Background error', 'error');
+    } else if (msg.type === 'scheduledCrawlProgress') {
+      const cell = document.querySelector(`[data-status-id="${CSS.escape(msg.jobId)}"]`);
+      if (cell) {
+        const label = msg.total ? `${msg.done}/${msg.total}` : `${msg.done}`;
+        cell.innerHTML = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">
+          <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse inline-block"></span>${label} pages</span>`;
+      }
+    } else if (msg.type === 'scheduledCrawlComplete') {
+      await getCrawlList();
+    }
+  });
+
+  bgPort.onDisconnect.addListener(() => {
+    bgPort = null;
+    if (document.getElementById('crawlControls') && !document.getElementById('crawlControls').classList.contains('hidden')) {
+      setCrawlState('idle');
+    }
+  });
+
+  bgPort.postMessage({ type: 'getActiveCrawl' });
+  return bgPort;
+}
+
+function sendBgMessage(msg) {
+  if (!bgPort) connectBgPort();
+  try {
+    bgPort.postMessage(msg);
+  } catch {
+    // Port died mid-send; reconnect and retry once
+    bgPort = null;
+    connectBgPort();
+    try { bgPort.postMessage(msg); } catch (e) { console.error('bgPort send failed:', e); }
+  }
+}
+
+function showToast(message, type = 'info') {
+  const colors = type === 'error'
+    ? 'bg-red-600 text-white'
+    : 'bg-slate-700 text-white';
+  const el = document.createElement('div');
+  el.className = `fixed bottom-4 right-4 ${colors} text-sm px-4 py-2 rounded shadow-lg z-50 transition-opacity`;
+  el.textContent = message;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3500);
+}
+
+function updateProgressFromSW({ crawled, total, status }) {
+  const pct = total > 0 ? Math.round((crawled / total) * 100) : 0;
+  document.getElementById('progressContainer').classList.remove('hidden');
+  document.getElementById('progress').style.width = `${pct}%`;
+  document.getElementById('progressLabel').textContent =
+    status === 'paused'
+      ? `${crawled} / ${total} pages — paused`
+      : `${crawled} / ${total} pages (${pct}%)`;
+  setCrawlState(status === 'paused' ? 'paused' : 'running');
+  crawlPaused = status === 'paused';
+}
+
+async function loadAndRenderCrawl(crawlKey) {
+  const blob = await crawlDB.get(crawlKey);
+  if (!blob?.data) return;
+  crawl = blob;
+  if (crawl.data?.startURL) {
+    try { crawl.data.startURL = new URL(crawl.data.startURL); } catch {}
+  }
+  document.getElementById('resultsArea').classList.remove('hidden');
+  parseData();
+  setCrawlState('idle');
+  document.getElementById('progressContainer').classList.add('hidden');
+}
+
+// On load: connect port (getActiveCrawl is sent inside connectBgPort)
+connectBgPort();
 
 // ── Init ───────────────────────────────────────────────────────────────────
 
