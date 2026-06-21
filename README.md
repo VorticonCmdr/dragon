@@ -2,6 +2,8 @@
 
 A Chrome extension for crawling and SEO analysis. Opens as a full tab, fetches pages in parallel, and extracts metadata, structured data, and article text into an interactive table.
 
+**[Getting started guide →](https://vorticoncmdr.github.io/dragon/)** · [Chrome Web Store](https://chromewebstore.google.com/detail/blue-dragon/lnohkjclhmcmnadllpmgmpgchgihjehp)
+
 ## Installation
 
 1. `npm install && npm run build`
