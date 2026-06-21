@@ -20,6 +20,6 @@
   "description": "an experimental crawler in Google Chrome",
   "manifest_version": 3,
   "name": "blue dragon",
-  "homepage_url": "https://valentin.app/blue-dragon.html",
+  "homepage_url": "https://vorticoncmdr.github.io/dragon/",
   "version": "0.0.1"
 }
