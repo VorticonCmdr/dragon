@@ -5,6 +5,7 @@ import 'tabulator-tables/dist/css/tabulator_simple.min.css';
 import Papa from 'papaparse';
 import { Readability } from '@mozilla/readability';
 import { RobotsMatcher } from 'google-robotstxt-parser';
+import { extractPageMetadata } from './metadata.js';
 
 // ── State ──────────────────────────────────────────────────────────────────
 
@@ -658,6 +659,7 @@ async function loadCrawl(id) {
   if (crawl.data?.results) {
     document.getElementById('resultsArea').classList.remove('hidden');
     parseData();
+    recomputeLogStats();
   }
   if (crawl.settings) {
     Object.keys(crawl.settings).forEach(key => {
@@ -860,22 +862,7 @@ function processPage(html, href) {
   if (!html) return null;
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
-
-  const metadata = {
-    title: doc.title || '',
-    description: doc.querySelector('meta[name="description"]')?.content || '',
-    href,
-    og: {
-      image: doc.querySelector('meta[property="og:image"]')?.attributes?.content?.textContent || '',
-      title: doc.querySelector('meta[property="og:title"]')?.content || '',
-      site_name: doc.querySelector('meta[property="og:site_name"]')?.content || '',
-      description: doc.querySelector('meta[property="og:description"]')?.content || '',
-    },
-    robots: doc.querySelector('meta[name="robots"]')?.content || '',
-    canonical: doc.querySelector('link[rel="canonical"]')?.attributes?.href?.textContent,
-    h1: doc.querySelector('h1')?.innerText || '',
-    schema: getArticleSchema(doc, href),
-  };
+  const metadata = extractPageMetadata(doc, href);
 
   if (crawl.settings.readability) {
     try {
@@ -894,64 +881,6 @@ function processPage(html, href) {
   }
 
   return metadata;
-}
-
-function getArticleSchema(doc, href) {
-  const schema = {
-    publisher: '',
-    dateModified: '',
-    datePublished: '',
-    authors: '',
-    headline: '',
-    alternateHeadline: '',
-  };
-
-  [...doc.querySelectorAll('script[type="application/ld+json"]')].forEach(el => {
-    if (!el.textContent) return;
-    let obj;
-    try {
-      obj = JSON.parse(el.textContent);
-    } catch {
-      return;
-    }
-
-    const publisher = getValues(obj, 'publisher')[0];
-    if (publisher?.['@type'] === 'Organization') schema.publisher = publisher.name;
-
-    const headline = getValues(obj, 'headline')[0];
-    if (headline) schema.headline = headline;
-
-    const altHeadline = getValues(obj, 'alternateHeadline')[0];
-    if (altHeadline) schema.alternateHeadline = altHeadline;
-
-    const dateModified = getValues(obj, 'dateModified')[0];
-    if (dateModified) schema.dateModified = dateModified;
-
-    const datePublished = getValues(obj, 'datePublished')[0];
-    if (datePublished) schema.datePublished = datePublished;
-
-    const authors = getValues(obj, 'author')[0];
-    if (Array.isArray(authors)) {
-      schema.authors = authors.map(a => a?.name).join(', ');
-    } else if (authors?.name) {
-      schema.authors = authors.name;
-    }
-    if (!schema.authors) {
-      schema.authors = extractAuthors(obj).join(', ');
-    }
-  });
-
-  return schema;
-}
-
-function extractAuthors(data) {
-  const authors = [];
-  if (Array.isArray(data['@graph'])) {
-    data['@graph'].forEach(item => {
-      if (item['@type'] === 'Person' && item.name) authors.push(item.name);
-    });
-  }
-  return authors;
 }
 
 // ── Robots.txt ────────────────────────────────────────────────────────────
@@ -1064,9 +993,16 @@ async function fetchURL(link) {
 
   const duration = Math.round(performance.now() - t0);
   const decodedBodySize = buf.byteLength;
-  const encodedBodySize = parseInt(response.headers.get('content-length') || '0', 10) || buf.byteLength;
-  const deliveryType = duration < 12 ? 'cache' : 'network';
-  Object.assign(crawl.data.results[link].fetch, { duration, decodedBodySize, encodedBodySize, deliveryType });
+  const contentEncoding = response.headers.get('content-encoding') || '';
+
+  const perfEntries = performance.getEntriesByName(link, 'resource');
+  const perfEntry = perfEntries.length > 0 ? perfEntries[perfEntries.length - 1] : null;
+
+  const encodedBodySize = perfEntry?.encodedBodySize || parseInt(response.headers.get('content-length') || '0', 10) || decodedBodySize;
+  const deliveryType = perfEntry ? (perfEntry.transferSize === 0 ? 'cache' : 'network') : (duration < 12 ? 'cache' : 'network');
+  const nextHopProtocol = perfEntry?.nextHopProtocol || '';
+
+  Object.assign(crawl.data.results[link].fetch, { duration, decodedBodySize, encodedBodySize, deliveryType, contentEncoding, nextHopProtocol });
 
   const html = new TextDecoder(crawl.settings.charset).decode(buf);
   if (!html) {
@@ -1084,8 +1020,12 @@ async function fetchURL(link) {
     });
   }
 
-  const metadata = processPage(html, link);
-  Object.assign(crawl.data.results[link], metadata);
+  try {
+    const metadata = processPage(html, link);
+    Object.assign(crawl.data.results[link], metadata);
+  } catch (e) {
+    console.error('processPage failed:', link, e);
+  }
 
   const isHtml = (crawl.data.results[link].fetch?.contentType || '').includes('text/html');
 
@@ -1186,16 +1126,6 @@ async function readOpfsFile(path) {
 }
 
 // ── Utilities ──────────────────────────────────────────────────────────────
-
-function getValues(obj, key) {
-  let found = [];
-  for (const k in obj) {
-    if (!Object.prototype.hasOwnProperty.call(obj, k)) continue;
-    if (k === key) found.push(obj[k]);
-    else if (typeof obj[k] === 'object') found = found.concat(getValues(obj[k], key));
-  }
-  return found;
-}
 
 function dict2flatarray(dict) {
   Object.entries(dict).forEach(([key, value]) => {
@@ -1335,8 +1265,10 @@ function parseData() {
     { title: 'h1',              field: 'h1',                     visible: false, sorter: 'string', headerFilter: 'input' },
     { title: 'content-type',    field: 'fetch_contentType',      visible: false, sorter: 'string', headerFilter: 'input' },
     { title: 'decoded size',    field: 'fetch_decodedBodySize',  visible: false, sorter: 'number', hozAlign: 'right', headerFilter: 'input' },
-    { title: 'deliveryType',    field: 'fetch_deliveryType',     visible: false, sorter: 'string', headerFilter: 'input' },
-    { title: 'timestamp',       field: 'fetch_timestamp',        visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'deliveryType',      field: 'fetch_deliveryType',      visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'content-encoding', field: 'fetch_contentEncoding',  visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'next hop protocol', field: 'fetch_nextHopProtocol', visible: false, sorter: 'string', headerFilter: 'input' },
+    { title: 'timestamp',         field: 'fetch_timestamp',        visible: false, sorter: 'string', headerFilter: 'input' },
     { title: 'ok',              field: 'fetch_ok',               visible: false, sorter: 'boolean', width: 70, headerFilter: 'tickCross', headerFilterParams: TF },
     { title: 'og:image',        field: 'og_image',               visible: false, sorter: 'string', headerFilter: 'input' },
     { title: 'og:title',        field: 'og_title',               visible: false, sorter: 'string', headerFilter: 'input' },
@@ -1351,6 +1283,7 @@ function parseData() {
     { title: 'content',         field: 'content',                visible: false, sorter: 'string', headerFilter: 'input' },
     { title: 'outbound',        field: 'isOutbound',             visible: true,  sorter: 'boolean', width: 80, headerFilter: 'tickCross', headerFilterParams: TF },
     { title: 'crawlable',       field: 'crawlable',              visible: true,  sorter: 'boolean', width: 90, headerFilter: 'tickCross', headerFilterParams: TF },
+    { title: 'indexable',       field: 'indexable',              visible: true,  sorter: 'boolean', width: 90, headerFilter: 'tickCross', headerFilterParams: TF },
     { title: 'outbound links',  field: 'outbound_count',  visible: false, sorter: 'number', hozAlign: 'right', width: 110, headerFilter: 'input' },
     { title: 'inbound links',   field: 'inbound_count',   visible: false, sorter: 'number', hozAlign: 'right', width: 100, headerFilter: 'input' },
     { title: 'broken outbound', field: 'broken_outbound', visible: false, sorter: 'number', hozAlign: 'right', width: 120, headerFilter: 'input' },
@@ -1407,6 +1340,9 @@ function parseData() {
     r.outbound_count   = r.links?.length ?? null;
     r.inbound_count    = inboundCount[r.href] ?? null;
     r.broken_outbound  = brokenOutbound[r.href] ?? null;
+    const ct = (r.fetch?.contentType || '').toLowerCase();
+    const robots = (r.robots || '').toLowerCase();
+    r.indexable = !!(r.fetch?.ok && ct.includes('text/html') && !robots.includes('noindex'));
     delete r.links;
     dict2flatarray(r);
   });
@@ -1756,7 +1692,7 @@ function switchTab(tab) {
   });
   document.getElementById('panelCrawl').classList.toggle('hidden', tab !== 'crawl');
   document.getElementById('panelSchedules').classList.toggle('hidden', tab !== 'schedules');
-  document.getElementById('panelLog').classList.toggle('hidden', tab !== 'log');
+  document.getElementById('panelStats').classList.toggle('hidden', tab !== 'stats');
   document.getElementById('panelIssues').classList.toggle('hidden', tab !== 'issues');
   if (tab === 'schedules') loadSchedules();
   if (tab === 'issues') buildIssues();
@@ -1964,56 +1900,119 @@ function esc(str) {
 
 // ── Log ────────────────────────────────────────────────────────────────────
 
-const logBody = document.getElementById('logBody');
-const logContainer = document.getElementById('logContainer');
+let logStats = { encountered: 0, crawled: 0, blocked: 0, internal: 0, external: 0, indexable: 0, nonIndexable: 0, statusCodes: {}, contentTypes: {} };
 
-document.getElementById('clearLogBtn').addEventListener('click', () => {
-  logBody.innerHTML = '';
-});
-
-function fmtBytes(b) {
-  if (!b) return '–';
-  if (b >= 1_048_576) return `${(b / 1_048_576).toFixed(1)} MB`;
-  if (b >= 1_024) return `${(b / 1_024).toFixed(1)} KB`;
-  return `${b} B`;
+function resetLogStats() {
+  logStats = { encountered: 0, crawled: 0, blocked: 0, internal: 0, external: 0, indexable: 0, nonIndexable: 0, statusCodes: {}, contentTypes: {} };
+  renderLog();
 }
 
-function appendLogEntry(entry) {
-  const url = entry.name;
-  const result = crawl.data.results?.[url]?.fetch;
-  const status = result?.status ?? '–';
-  const ok = result?.ok;
-  const contentType = (result?.contentType || '').replace(/;.*/, '').trim() || '–';
-  const duration = Math.round(entry.duration);
-  const size = fmtBytes(entry.encodedBodySize);
-  const delivery = entry.deliveryType || (entry.transferSize === 0 && entry.encodedBodySize > 0 ? 'cache' : 'network');
-  const time = new Date(performance.timeOrigin + entry.startTime).toLocaleTimeString();
-
-  const statusClass = ok === false ? 'text-red-500' : ok === true ? 'text-green-600' : 'text-slate-400';
-
-  const tr = document.createElement('tr');
-  tr.className = 'border-b border-slate-100 hover:bg-slate-50';
-  tr.innerHTML =
-    `<td class="px-3 py-1.5 text-slate-400 whitespace-nowrap">${time}</td>` +
-    `<td class="px-3 py-1.5 font-medium text-right whitespace-nowrap ${statusClass}">${status}</td>` +
-    `<td class="px-3 py-1.5 text-right whitespace-nowrap text-slate-600">${duration}</td>` +
-    `<td class="px-3 py-1.5 text-right whitespace-nowrap text-slate-600">${size}</td>` +
-    `<td class="px-3 py-1.5 text-slate-500 whitespace-nowrap">${esc(contentType)}</td>` +
-    `<td class="px-3 py-1.5 text-slate-400 whitespace-nowrap">${esc(delivery)}</td>` +
-    `<td class="px-3 py-1.5 text-slate-700 break-all">${esc(url)}</td>`;
-  logBody.appendChild(tr);
-
-  const panel = document.getElementById('panelLog');
-  if (!panel.classList.contains('hidden')) {
-    logContainer.scrollTop = logContainer.scrollHeight;
-  }
+function updateLogFromEntry({ url, status, ok, contentType, robots }) {
+  logStats.crawled++;
+  const ct = (contentType || '').replace(/;.*/, '').trim() || 'unknown';
+  const sc = String(status || 0);
+  logStats.statusCodes[sc] = (logStats.statusCodes[sc] || 0) + 1;
+  logStats.contentTypes[ct] = (logStats.contentTypes[ct] || 0) + 1;
+  try {
+    const startHost = crawl.data.startURL?.hostname;
+    if (!startHost || new URL(url).hostname === startHost) logStats.internal++;
+    else logStats.external++;
+  } catch {}
+  const isHtml = ct.includes('text/html');
+  const noindex = (robots || '').toLowerCase().includes('noindex');
+  if (ok && isHtml && !noindex) logStats.indexable++;
+  else logStats.nonIndexable++;
+  renderLog();
 }
 
-new PerformanceObserver(list => {
-  for (const entry of list.getEntries()) {
-    if (entry.initiatorType === 'fetch') appendLogEntry(entry);
+function recomputeLogStats() {
+  const results = Object.values(crawl.data.results || {});
+  logStats = { encountered: results.length, crawled: 0, blocked: 0, internal: 0, external: 0, indexable: 0, nonIndexable: 0, statusCodes: {}, contentTypes: {} };
+  const startHost = crawl.data.startURL?.hostname;
+  for (const r of results) {
+    const ct = (r.fetch?.contentType || '').replace(/;.*/, '').trim() || 'unknown';
+    const sc = String(r.fetch?.status || 0);
+    logStats.statusCodes[sc] = (logStats.statusCodes[sc] || 0) + 1;
+    logStats.contentTypes[ct] = (logStats.contentTypes[ct] || 0) + 1;
+    try {
+      if (!startHost || new URL(r.href).hostname === startHost) logStats.internal++;
+      else logStats.external++;
+    } catch {}
+    if (r.crawlable === false) logStats.blocked++;
+    const isHtml = ct.includes('text/html');
+    const noindex = (r.robots || '').toLowerCase().includes('noindex');
+    if (r.fetch?.ok && isHtml && !noindex) logStats.indexable++;
+    else logStats.nonIndexable++;
+    logStats.crawled++;
   }
-}).observe({ type: 'resource', buffered: true });
+  renderLog();
+}
+
+function renderLog() {
+  renderLogSummary();
+  renderLogStatusCodes();
+  renderLogContentTypes();
+}
+
+function renderLogSummary() {
+  const rows = [
+    ['Total URLs encountered', logStats.encountered, null],
+    ['Total URLs crawled',     logStats.crawled,     null],
+    ['Blocked by robots.txt',  logStats.blocked,     null],
+    ['Internal URLs',          logStats.internal,    () => filterTableAndSwitch([{ field: 'isOutbound', type: '!=', value: true }])],
+    ['External URLs',          logStats.external,    () => filterTableAndSwitch([{ field: 'isOutbound', type: '=', value: true }])],
+    ['Indexable',              logStats.indexable,    () => filterTableAndSwitch([{ field: 'indexable', type: '=', value: true }])],
+    ['Non-indexable',          logStats.nonIndexable, () => filterTableAndSwitch([{ field: 'indexable', type: '=', value: false }])],
+  ];
+  const tbody = document.getElementById('logSummaryBody');
+  tbody.innerHTML = rows.map(([label, count, fn]) =>
+    `<tr class="border-b border-slate-100${fn ? ' cursor-pointer hover:bg-blue-50' : ''}">
+      <td class="px-3 py-2 text-slate-600">${label}</td>
+      <td class="px-3 py-2 text-right font-mono font-medium text-slate-800">${count}</td>
+    </tr>`
+  ).join('');
+  [...tbody.querySelectorAll('tr')].forEach((tr, i) => {
+    if (rows[i][2]) tr.addEventListener('click', rows[i][2]);
+  });
+}
+
+function renderLogStatusCodes() {
+  const sorted = Object.entries(logStats.statusCodes).sort((a, b) => b[1] - a[1]);
+  const tbody = document.getElementById('logStatusBody');
+  tbody.innerHTML = sorted.map(([sc, count]) => {
+    const cls = sc.startsWith('2') ? 'text-green-600' : sc.startsWith('3') ? 'text-amber-600' : (sc.startsWith('4') || sc.startsWith('5')) ? 'text-red-500' : 'text-slate-500';
+    return `<tr class="border-b border-slate-100 cursor-pointer hover:bg-blue-50" data-status="${sc}">
+      <td class="px-3 py-2 font-mono font-medium ${cls}">${sc}</td>
+      <td class="px-3 py-2 text-right font-mono text-slate-800">${count}</td>
+    </tr>`;
+  }).join('');
+  tbody.addEventListener('click', e => {
+    const tr = e.target.closest('tr[data-status]');
+    if (tr) filterTableAndSwitch([{ field: 'fetch_status', type: '=', value: parseInt(tr.dataset.status) }]);
+  });
+}
+
+function renderLogContentTypes() {
+  const sorted = Object.entries(logStats.contentTypes).sort((a, b) => b[1] - a[1]);
+  const tbody = document.getElementById('logContentBody');
+  tbody.innerHTML = sorted.map(([ct, count]) =>
+    `<tr class="border-b border-slate-100 cursor-pointer hover:bg-blue-50" data-ct="${esc(ct)}">
+      <td class="px-3 py-2 font-mono text-slate-700">${esc(ct)}</td>
+      <td class="px-3 py-2 text-right font-mono text-slate-800">${count}</td>
+    </tr>`
+  ).join('');
+  tbody.addEventListener('click', e => {
+    const tr = e.target.closest('tr[data-ct]');
+    if (tr) filterTableAndSwitch([{ field: 'fetch_contentType', type: 'like', value: tr.dataset.ct }]);
+  });
+}
+
+function filterTableAndSwitch(filters) {
+  if (!table) return;
+  table.setFilter(filters);
+  switchTab('crawl');
+}
+
 
 // ── Background port ────────────────────────────────────────────────────────
 
@@ -2025,8 +2024,13 @@ function connectBgPort() {
   bgPort.onMessage.addListener(async msg => {
     if (msg.type === 'crawlProgress') {
       updateProgressFromSW(msg);
+      logStats.encountered = msg.total || logStats.encountered;
+      renderLogSummary();
+    } else if (msg.type === 'urlFetched') {
+      updateLogFromEntry(msg);
     } else if (msg.type === 'crawlComplete') {
       await loadAndRenderCrawl(msg.crawlKey);
+      recomputeLogStats();
       await getCrawlList();
     } else if (msg.type === 'error') {
       showToast(msg.message || 'Background error', 'error');

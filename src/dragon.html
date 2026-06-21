@@ -59,8 +59,8 @@
         class="tab-btn px-5 py-2.5 text-sm font-medium text-blue-600 border-b-2 border-blue-600 -mb-px">Crawl</button>
       <button data-tab="schedules"
         class="tab-btn px-5 py-2.5 text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px">Schedules</button>
-      <button data-tab="log"
-        class="tab-btn px-5 py-2.5 text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px">Log</button>
+      <button data-tab="stats"
+        class="tab-btn px-5 py-2.5 text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px">Stats</button>
       <button data-tab="issues"
         class="tab-btn px-5 py-2.5 text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px">Issues</button>
     </div>
@@ -284,30 +284,48 @@
 
       </div><!-- /panelSchedules -->
 
-      <!-- Log panel -->
-      <div id="panelLog" class="hidden flex flex-col" style="height: calc(100vh - 108px)">
-        <div class="flex items-center justify-between py-2 shrink-0">
-          <span class="text-xs text-slate-400">Live resource timing · updates as URLs are fetched</span>
-          <button id="clearLogBtn"
-            class="px-3 py-1 text-xs border border-slate-300 rounded text-slate-600 hover:bg-slate-50">clear</button>
+      <!-- Stats panel -->
+      <div id="panelStats" class="hidden flex flex-col" style="height: calc(100vh - 108px)">
+        <div class="flex-1 overflow-y-auto space-y-5 pb-4 pt-2">
+
+          <!-- Summary -->
+          <section>
+            <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Summary</h3>
+            <table class="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
+              <tbody id="logSummaryBody"></tbody>
+            </table>
+          </section>
+
+          <!-- Status codes -->
+          <section>
+            <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Status codes</h3>
+            <table class="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
+              <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-slate-500">status</th>
+                  <th class="px-3 py-2 text-right text-xs font-medium text-slate-500">count</th>
+                </tr>
+              </thead>
+              <tbody id="logStatusBody"></tbody>
+            </table>
+          </section>
+
+          <!-- Content types -->
+          <section>
+            <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Content types</h3>
+            <table class="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
+              <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th class="px-3 py-2 text-left text-xs font-medium text-slate-500">content-type</th>
+                  <th class="px-3 py-2 text-right text-xs font-medium text-slate-500">count</th>
+                </tr>
+              </thead>
+              <tbody id="logContentBody"></tbody>
+            </table>
+          </section>
+
         </div>
-        <div id="logContainer" class="flex-1 overflow-y-auto border border-slate-200 rounded-lg">
-          <table class="w-full text-xs font-mono border-collapse">
-            <thead class="sticky top-0 bg-white border-b border-slate-200 text-left">
-              <tr>
-                <th class="px-3 py-2 font-medium text-slate-500 whitespace-nowrap">time</th>
-                <th class="px-3 py-2 font-medium text-slate-500 whitespace-nowrap w-16 text-right">status</th>
-                <th class="px-3 py-2 font-medium text-slate-500 whitespace-nowrap w-20 text-right">ms</th>
-                <th class="px-3 py-2 font-medium text-slate-500 whitespace-nowrap w-20 text-right">size</th>
-                <th class="px-3 py-2 font-medium text-slate-500 whitespace-nowrap">content-type</th>
-                <th class="px-3 py-2 font-medium text-slate-500 whitespace-nowrap">delivery</th>
-                <th class="px-3 py-2 font-medium text-slate-500">URL</th>
-              </tr>
-            </thead>
-            <tbody id="logBody"></tbody>
-          </table>
-        </div>
-      </div><!-- /panelLog -->
+      </div><!-- /panelStats -->
 
       <!-- Issues panel -->
       <div id="panelIssues" class="hidden space-y-3 pt-2">

@@ -1,4 +1,5 @@
 import { parse as parseHtml } from 'node-html-parser';
+import { extractPageMetadata } from './metadata.js';
 import './db.js';
 
 // ── User-Agent via declarativeNetRequest ───────────────────────────────────
@@ -247,10 +248,17 @@ async function runBackgroundCrawl() {
           const html = await response.text();
           const duration = Math.round(performance.now() - t0);
           const rawBytes = new TextEncoder().encode(html).byteLength;
-          const encodedBodySize = parseInt(response.headers.get('content-length') || '0', 10) || rawBytes;
-          const deliveryType = duration < 12 ? 'cache' : 'network';
+          const contentEncoding = response.headers.get('content-encoding') || '';
 
-          const meta = extractMetadata(html);
+          const perfEntries = performance.getEntriesByName(url, 'resource');
+          const perfEntry = perfEntries.length > 0 ? perfEntries[perfEntries.length - 1] : null;
+
+          const encodedBodySize = perfEntry?.encodedBodySize || parseInt(response.headers.get('content-length') || '0', 10) || rawBytes;
+          const decodedBodySize = perfEntry?.decodedBodySize || rawBytes;
+          const deliveryType = perfEntry ? (perfEntry.transferSize === 0 ? 'cache' : 'network') : (duration < 12 ? 'cache' : 'network');
+          const nextHopProtocol = perfEntry?.nextHopProtocol || '';
+
+          const meta = extractPageMetadata(parseHtml(html), url);
           activeCrawl.data.results[url] = {
             href: url,
             depth: activeCrawl.data.depth[url] ?? 0,
@@ -264,8 +272,10 @@ async function runBackgroundCrawl() {
               timestamp: new Date().toISOString(),
               duration,
               encodedBodySize,
-              decodedBodySize: rawBytes,
+              decodedBodySize,
               deliveryType,
+              contentEncoding,
+              nextHopProtocol,
             },
             title: meta.title,
             description: meta.description,
@@ -273,9 +283,21 @@ async function runBackgroundCrawl() {
             canonical: meta.canonical,
             keyword: meta.keyword,
             robots: meta.robots,
-            og: { title: meta.ogTitle, description: meta.ogDescription },
+            og: meta.og,
+            schema: meta.schema,
           };
           activeCrawl.data.alreadyFetched[url] = 1;
+          broadcastProgress({
+            type: 'urlFetched',
+            url,
+            status: response.status,
+            ok: response.ok,
+            contentType: response.headers.get('content-type') || '',
+            duration,
+            encodedBodySize,
+            deliveryType,
+            robots: meta.robots,
+          });
 
           // Recursive mode: store internal links + discover and enqueue links
           if (activeCrawl.settings.crawlMode === 'recursive' && response.ok && html) {
@@ -787,51 +809,14 @@ async function writeToOPFS(rootDir, crawlDir, url, html) {
 async function crawlUrl(url) {
   const response = await fetch(url, { cache: 'no-cache', credentials: 'omit' });
   const html = await response.text();
+  const meta = extractPageMetadata(parseHtml(html), url);
   return {
     url,
     status: response.status,
     ok: response.ok,
     html,
     timestamp: new Date().toISOString(),
-    ...extractMetadata(html),
-  };
-}
-
-function extractMetadata(html) {
-  function get(patterns) {
-    for (const p of [].concat(patterns)) {
-      const m = html.match(p);
-      if (m) return m[1].replace(/<[^>]+>/g, '').trim();
-    }
-    return '';
-  }
-  return {
-    title: get(/<title[^>]*>([\s\S]*?)<\/title>/i),
-    description: get([
-      /<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)/i,
-      /<meta[^>]+content=["']([^"']*)[^>]+name=["']description/i,
-    ]),
-    h1: get(/<h1[^>]*>([\s\S]*?)<\/h1>/i),
-    canonical: get([
-      /<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']*)/i,
-      /<link[^>]+href=["']([^"']*)[^>]+rel=["']canonical/i,
-    ]),
-    ogTitle: get([
-      /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']*)/i,
-      /<meta[^>]+content=["']([^"']*)[^>]+property=["']og:title/i,
-    ]),
-    ogDescription: get([
-      /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']*)/i,
-      /<meta[^>]+content=["']([^"']*)[^>]+property=["']og:description/i,
-    ]),
-    robots: get([
-      /<meta[^>]+name=["']robots["'][^>]+content=["']([^"']*)/i,
-      /<meta[^>]+content=["']([^"']*)[^>]+name=["']robots/i,
-    ]),
-    keyword: get([
-      /<meta[^>]+name=["']keywords["'][^>]+content=["']([^"']*)/i,
-      /<meta[^>]+content=["']([^"']*)[^>]+name=["']keywords/i,
-    ]),
+    ...meta,
   };
 }
 

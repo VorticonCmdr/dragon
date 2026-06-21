@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>blue dragon — getting started</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:   #2563eb;
+      --blue-l: #eff6ff;
+      --slate:  #1e293b;
+      --muted:  #64748b;
+      --border: #e2e8f0;
+      --bg:     #f8fafc;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--slate);
+      background: var(--bg);
+    }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── layout ── */
+    header {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    header img { width: 36px; height: 36px; }
+    header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em; }
+    header span { color: var(--muted); font-size: .9rem; margin-left: .25rem; font-weight: 400; }
+
+    .hero {
+      background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
+      color: #fff;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+    .hero h2 { font-size: 2.5rem; font-weight: 800; letter-spacing: -.03em; margin-bottom: .75rem; }
+    .hero p  { font-size: 1.15rem; opacity: .85; max-width: 540px; margin: 0 auto 2rem; }
+    .hero .badges { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
+    .badge {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 999px;
+      padding: .3rem .9rem;
+      font-size: .8rem; font-weight: 500;
+    }
+
+    main { max-width: 860px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+    section { margin-bottom: 3.5rem; }
+    h2.section { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; margin-bottom: 1.25rem;
+                 padding-bottom: .5rem; border-bottom: 2px solid var(--border); }
+
+    /* steps */
+    .steps { display: flex; flex-direction: column; gap: 1.5rem; }
+    .step  { display: flex; gap: 1.25rem; align-items: flex-start; }
+    .step-num {
+      flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 50%;
+      background: var(--blue); color: #fff;
+      font-size: .85rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-body h3 { font-size: 1rem; font-weight: 600; margin-bottom: .25rem; }
+    .step-body p, .step-body ul { color: var(--muted); font-size: .93rem; }
+    .step-body ul { padding-left: 1.2rem; }
+    .step-body li { margin-top: .2rem; }
+    code {
+      background: #f1f5f9; border: 1px solid var(--border);
+      border-radius: 4px; padding: .1em .4em;
+      font-size: .85em; font-family: ui-monospace, monospace;
+    }
+
+    /* screenshot placeholder */
+    .screenshot {
+      margin: 1.25rem 0;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    }
+    .screenshot img { display: block; width: 100%; height: auto; }
+    .screenshot .placeholder {
+      background: var(--blue-l);
+      border: 2px dashed #93c5fd;
+      border-radius: 10px;
+      padding: 3rem 2rem;
+      text-align: center;
+      color: #3b82f6;
+      font-size: .9rem;
+    }
+    .screenshot .placeholder strong { display: block; font-size: 1rem; margin-bottom: .25rem; }
+
+    /* feature grid */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+    .card {
+      background: #fff; border: 1px solid var(--border); border-radius: 10px;
+      padding: 1.25rem 1.25rem 1rem;
+    }
+    .card-icon { font-size: 1.5rem; margin-bottom: .5rem; }
+    .card h3   { font-size: .95rem; font-weight: 600; margin-bottom: .3rem; }
+    .card p    { font-size: .85rem; color: var(--muted); }
+
+    /* table */
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; background: #fff;
+            border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    th { background: #f8fafc; text-align: left; padding: .6rem 1rem;
+         font-size: .78rem; font-weight: 600; text-transform: uppercase;
+         letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--border); }
+    td { padding: .55rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    td:first-child { font-weight: 500; white-space: nowrap; }
+
+    /* tip box */
+    .tip {
+      background: var(--blue-l); border-left: 3px solid var(--blue);
+      border-radius: 0 6px 6px 0; padding: .75rem 1rem;
+      font-size: .88rem; color: #1e40af; margin: 1rem 0;
+    }
+    .tip strong { font-weight: 600; }
+
+    footer {
+      text-align: center; padding: 2rem; color: var(--muted); font-size: .85rem;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="https://raw.githubusercontent.com/VorticonCmdr/dragon/main/public/icons/dragon64.png" alt="blue dragon" />
+  <h1>blue dragon <span>getting started</span></h1>
+</header>
+
+<div class="hero">
+  <h2>Crawl smarter.</h2>
+  <p>A Chrome extension for web crawling and SEO analysis. Fast parallel fetching, rich metadata extraction, and an interactive results table — all in a browser tab.</p>
+  <div class="badges">
+    <span class="badge">⚡ Manifest V3</span>
+    <span class="badge">📊 Tabulator table</span>
+    <span class="badge">🤖 robots.txt aware</span>
+    <span class="badge">🗓 Scheduled crawls</span>
+    <span class="badge">v0.0.1</span>
+  </div>
+</div>
+
+<main>
+
+  <!-- INSTALLATION -->
+  <section>
+    <h2 class="section">Installation</h2>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Download or clone the repository</h3>
+          <p>Get the source from <a href="https://github.com/VorticonCmdr/dragon">github.com/VorticonCmdr/dragon</a>, then run:</p>
+          <pre style="background:#1e293b;color:#e2e8f0;padding:.75rem 1rem;border-radius:6px;font-size:.85rem;margin:.5rem 0;overflow-x:auto"><code style="background:none;border:none;color:inherit;padding:0">npm install &amp;&amp; npm run build</code></pre>
+          <p>This produces the loadable extension in the <code>dist/</code> folder.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Load into Chrome</h3>
+          <ul>
+            <li>Open <code>chrome://extensions</code></li>
+            <li>Enable <strong>Developer mode</strong> (top-right toggle)</li>
+            <li>Click <strong>Load unpacked</strong> → select the <code>dist/</code> folder</li>
+          </ul>
+          <div class="screenshot">
+            <img src="screenshots/install.png" alt="Chrome extensions page with blue dragon loaded" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+            <div class="placeholder" style="display:none"><strong>install.png</strong>Chrome extensions page showing blue dragon loaded</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Open blue dragon</h3>
+          <p>Click the dragon icon <img src="https://raw.githubusercontent.com/VorticonCmdr/dragon/main/public/icons/dragon16.png" style="vertical-align:middle;width:16px"> in the Chrome toolbar. The extension opens as a full tab.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- QUICK START -->
+  <section>
+    <h2 class="section">Quick start: crawl a site</h2>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Build your URL list</h3>
+          <p>Enter a start URL in the <strong>Spider URL</strong> field and click <strong>fetch</strong>. Blue dragon fetches the page and extracts all linked URLs into the list below. Alternatively, paste URLs directly (one per line) or import from CSV / sitemap via the <strong>URLs</strong> menu.</p>
+          <div class="screenshot">
+            <img src="screenshots/crawl-setup.png" alt="Crawl tab with URL list populated" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+            <div class="placeholder" style="display:none"><strong>crawl-setup.png</strong>Crawl tab with a URL list filled in and spider URL entered</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Start the crawl</h3>
+          <p>Click <strong>crawl</strong>. Pages are fetched concurrently (default: 5 connections). A progress bar tracks completion. The crawl runs in the background service worker — you can close this tab and come back at any time.</p>
+          <div class="screenshot">
+            <img src="screenshots/crawl-running.png" alt="Crawl in progress with progress bar" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+            <div class="placeholder" style="display:none"><strong>crawl-running.png</strong>Active crawl with progress bar and live counter visible</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Explore the results</h3>
+          <p>When the queue empties, the results table renders automatically. Each row is one URL. Rows are colour-coded: red for 4xx/5xx, amber for 3xx. Use the search box to filter, or click any column header to sort. Click a row to open the full URL detail panel.</p>
+          <div class="screenshot">
+            <img src="screenshots/results.png" alt="Results table after crawl" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+            <div class="placeholder" style="display:none"><strong>results.png</strong>Completed crawl — results table with multiple rows and column headers</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tip">
+      <strong>Tip:</strong> Use <strong>Crawls → save current</strong> to persist results. Saved crawls can be reloaded later from <strong>Crawls → load</strong>.
+    </div>
+  </section>
+
+  <!-- CRAWL MODES -->
+  <section>
+    <h2 class="section">Crawl modes</h2>
+    <table>
+      <thead><tr><th>Mode</th><th>What it does</th><th>Good for</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>list</td>
+          <td>Crawls exactly the URLs in the list — no link following.</td>
+          <td>Auditing a known set of pages (from a sitemap, CSV export, or manual list)</td>
+        </tr>
+        <tr>
+          <td>autonomous</td>
+          <td>Recursive spider: starts from a single URL, discovers and follows internal links, stays on the same hostname. Capped by <em>max pages</em>.</td>
+          <td>Full-site crawls where you don't have a URL list upfront</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="color:var(--muted);font-size:.88rem;margin-top:.75rem">Switch between modes in <strong>Configuration</strong>. Autonomous mode auto-enables <em>stay on hostname</em>.</p>
+  </section>
+
+  <!-- STATS TAB -->
+  <section>
+    <h2 class="section">Stats tab</h2>
+    <p style="margin-bottom:1rem">Live aggregated metrics — updates as each URL is fetched, and also populated when loading a saved crawl.</p>
+
+    <div class="screenshot">
+      <img src="screenshots/stats.png" alt="Stats tab showing summary, status codes, content types" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="placeholder" style="display:none"><strong>stats.png</strong>Stats tab after a crawl — Summary section, Status codes, and Content types visible</div>
+    </div>
+
+    <table style="margin-top:1rem">
+      <thead><tr><th>Section</th><th>Shows</th></tr></thead>
+      <tbody>
+        <tr><td>Summary</td><td>Total encountered, crawled, blocked, internal, external, indexable, non-indexable</td></tr>
+        <tr><td>Status codes</td><td>Count per HTTP status — click any row to filter the results table</td></tr>
+        <tr><td>Content types</td><td>Count per content-type — click any row to filter the results table</td></tr>
+      </tbody>
+    </table>
+    <div class="tip" style="margin-top:1rem">
+      <strong>Tip:</strong> Clicking <em>Indexable</em> or <em>Internal URLs</em> in Summary filters the results table and switches to the Crawl tab instantly.
+    </div>
+  </section>
+
+  <!-- ISSUES TAB -->
+  <section>
+    <h2 class="section">Issues tab</h2>
+    <p style="margin-bottom:1rem">After a crawl, the Issues tab runs SEO checks across all HTML pages and groups findings by severity.</p>
+
+    <div class="screenshot">
+      <img src="screenshots/issues.png" alt="Issues tab with SEO findings" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="placeholder" style="display:none"><strong>issues.png</strong>Issues tab open with at least one expanded section showing URLs</div>
+    </div>
+
+    <table style="margin-top:1rem">
+      <thead><tr><th>Check</th><th>Severity</th></tr></thead>
+      <tbody>
+        <tr><td>Broken pages (4xx / 5xx)</td><td>Error</td></tr>
+        <tr><td>Blocked by robots.txt</td><td>Warning</td></tr>
+        <tr><td>Redirects</td><td>Warning</td></tr>
+        <tr><td>Missing title</td><td>Warning</td></tr>
+        <tr><td>Missing H1</td><td>Warning</td></tr>
+        <tr><td>Missing meta description</td><td>Info</td></tr>
+        <tr><td>Missing canonical</td><td>Info</td></tr>
+        <tr><td>Duplicate titles</td><td>Warning</td></tr>
+        <tr><td>Broken outbound links</td><td>Error</td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--muted);font-size:.88rem;margin-top:.75rem">Clicking an issue row opens the URL detail view for that page.</p>
+  </section>
+
+  <!-- KEY FEATURES -->
+  <section>
+    <h2 class="section">Key features</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <h3>Parallel fetching</h3>
+        <p>Configurable concurrent connections (default 5, up to 20). Crawl delay and max retries are adjustable.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔍</div>
+        <h3>Rich metadata</h3>
+        <p>Extracts title, description, H1, canonical, robots, Open Graph tags, and Schema.org structured data (publisher, dates, authors, headlines).</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🤖</div>
+        <h3>Robots.txt aware</h3>
+        <p>Respects robots.txt per the configured User-Agent. Overrides can be set per hostname without touching the live server.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗓</div>
+        <h3>Scheduled crawls</h3>
+        <p>Set up recurring crawls (hourly to weekly) with URL sources and a filter. Runs in the background even when the tab is closed.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📤</div>
+        <h3>CSV export</h3>
+        <p>Export all rows and all columns (including hidden ones) as CSV. Import CSVs or sitemap XML files as URL lists.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💾</div>
+        <h3>HTML archiving</h3>
+        <p>Optionally save raw HTML responses to the browser's Origin Private File System. View, open, or download individual pages.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LINKS -->
+  <section>
+    <h2 class="section">Links</h2>
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:.5rem;font-size:.95rem">
+      <li>📦 <a href="https://github.com/VorticonCmdr/dragon">GitHub repository</a></li>
+      <li>🐛 <a href="https://github.com/VorticonCmdr/dragon/issues">Report an issue</a></li>
+      <li>📄 <a href="https://github.com/VorticonCmdr/dragon/blob/main/README.md">Full README</a></li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  blue dragon v0.0.1 &nbsp;·&nbsp; Apache 2.0 &nbsp;·&nbsp;
+  <a href="https://github.com/VorticonCmdr/dragon">VorticonCmdr/dragon</a>
+</footer>
+
+</body>
+</html>

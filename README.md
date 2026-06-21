@@ -57,6 +57,7 @@ Each row is one crawled URL. Rows are colour-coded by HTTP status: red for 4xx/5
 | redirected | ✓ | Whether the request was redirected |
 | encoded size | ✓ | Compressed response size |
 | crawlable | ✓ | Whether the active bot UA is allowed by robots.txt |
+| indexable | ✓ | True when status is 2xx, content-type is text/html, and no `noindex` directive is present |
 | canonical | | `<link rel="canonical">` |
 | title | | `<title>` |
 | description | | `<meta name="description">` |
@@ -66,6 +67,8 @@ Each row is one crawled URL. Rows are colour-coded by HTTP status: red for 4xx/5
 | content-type | | `Content-Type` response header |
 | decoded size | | Uncompressed response size |
 | deliveryType | | Cache delivery type from Performance API |
+| content-encoding | | Transfer encoding used (gzip, br, identity, etc.) |
+| next-hop-protocol | | HTTP protocol version (h2, http/1.1, h3) |
 | timestamp | | Time of the request |
 | ok | | Whether the response was successful (2xx) |
 | og:image / og:title / og:site / og:description | | Open Graph tags |
@@ -231,9 +234,17 @@ Each row shows: property (the crawl target), interval, last run time with ok/tot
 
 Completed crawls are automatically saved to **Crawls → Load**. If a scheduled crawl fires while a manual crawl is already running, it is queued and starts as soon as the manual crawl finishes.
 
-## Log tab
+## Stats tab
 
-Live feed of all fetch events during a crawl — URL, status code, duration, and any errors.
+Aggregated crawl statistics, visible during and after a crawl. Updates in real-time as pages are fetched; also populated when loading a saved crawl.
+
+| Section | Content |
+|---------|---------|
+| Summary | Total URLs encountered, crawled, blocked by robots.txt, internal, external, indexable, non-indexable |
+| Status codes | Count per HTTP status code, sorted by frequency |
+| Content types | Count per content-type, sorted by frequency |
+
+Clicking any **Status codes** or **Content types** row — or the **Indexable** / **Non-indexable** / **Internal** / **External** rows in Summary — filters the results table to matching rows and switches to the Crawl tab.
 
 ## Tech stack
 
