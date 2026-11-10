@@ -112,3 +112,6 @@ dist
 
 # release ZIPs
 *.zip
+
+# Chrome Web Store screenshots (npm run screenshots)
+store/

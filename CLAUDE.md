@@ -14,7 +14,7 @@ npm run build        # production build → dist/
 npm run dev          # watch mode (rebuilds on change)
 npm test             # unit tests (test/unit, node:test)
 npm run test:e2e     # builds, then runs test/e2e in Chrome for Testing
-npm run screenshots  # retakes docs/screenshots from the demo shop
+npm run screenshots  # retakes docs/screenshots (1.5x) and store/ (1280×800, Chrome Web Store) from the demo shop
 ```
 
 **Load in Chrome:** `chrome://extensions` → "Load unpacked" → select `dist/`. Reload extension after each `npm run build`.

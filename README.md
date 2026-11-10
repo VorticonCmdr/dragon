@@ -204,7 +204,7 @@ Each schedule shows its next run and last result, with **Open last result**, **R
 ```bash
 npm test             # unit tests, no browser needed
 npm run test:e2e     # builds, then runs the extension in Chrome for Testing
-npm run screenshots  # retakes the images in docs/screenshots
+npm run screenshots  # retakes docs/screenshots, and the 1280×800 Chrome Web Store set in store/
 ```
 
 The end-to-end suites need Chrome for Testing, since branded Chrome ignores `--load-extension`. Install it with `npx @puppeteer/browsers install chrome@stable --path ~/.cache/puppeteer`, or set `CHROME` to its path. They only talk to local servers and load a temporary copy of `dist/`. `node test/e2e/run-all.mjs rank ui` runs a selection.

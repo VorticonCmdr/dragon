@@ -1,34 +1,45 @@
 // Retakes the images in docs/screenshots from a crawl of the demo shop.
 // install.png shows the Chrome Web Store and is not generated.
+// Every full-window shot is also saved to store/ at exactly 1280x800,
+// the size the Chrome Web Store accepts.
 
-import { statSync } from 'node:fs';
+import { mkdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { DEMO_ARGS, startDemoSite } from '../test/e2e/demo-site.mjs';
 import { ROOT, launchExtension, sleep } from '../test/e2e/helpers.mjs';
 
 const OUT = join(ROOT, 'docs/screenshots');
+const STORE = join(ROOT, 'store');
+const WIDTH = 1280;
+const HEIGHT = 800;
+const SCALE = 1.5;
+mkdirSync(STORE, { recursive: true });
 const srv = await startDemoSite();
 const { browser, url, close } = await launchExtension({
   args: DEMO_ARGS,
-  viewport: { width: 1280, height: 800, deviceScaleFactor: 1.5 },
+  viewport: { width: WIDTH, height: HEIGHT, deviceScaleFactor: SCALE },
 });
 const page = await browser.newPage();
 
-function report(name) {
-  console.log(name, `${Math.round(statSync(join(OUT, name)).size / 1024)} KB`);
+function report(path) {
+  console.log(path.slice(ROOT.length + 1), `${Math.round(statSync(path).size / 1024)} KB`);
 }
 
 async function shot(name) {
   await page.mouse.move(640, 5);
   await sleep(150);
   await page.screenshot({ path: join(OUT, name) });
-  report(name);
+  report(join(OUT, name));
+  // Same frame, scaled back to one pixel per CSS pixel.
+  const store = join(STORE, name);
+  await page.screenshot({ path: store, clip: { x: 0, y: 0, width: WIDTH, height: HEIGHT, scale: 1 / SCALE } });
+  report(store);
 }
 
 async function shotOf(index, name) {
   const card = (await page.$$('.rank-card'))[index];
   await card.screenshot({ path: join(OUT, name) });
-  report(name);
+  report(join(OUT, name));
 }
 
 const toggleRail = async () => {
