@@ -109,3 +109,6 @@ dist
 
 .zed/
 .DS_Store
+
+# release ZIPs
+*.zip

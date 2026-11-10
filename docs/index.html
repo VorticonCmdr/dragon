@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>blue dragon</title>
+  <title>Blue Dragon</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --blue:   #2563eb;
-      --blue-l: #eff6ff;
+      --blue:   #0f6bb1;
+      --blue-l: #e2f0fb;
       --slate:  #1e293b;
       --muted:  #64748b;
       --border: #e2e8f0;
@@ -41,7 +41,7 @@
     header span { color: var(--muted); font-size: .9rem; margin-left: .25rem; font-weight: 400; }
 
     .hero {
-      background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
+      background: linear-gradient(135deg, #0b4a7e 0%, #0f6bb1 55%, #2f8fd6 100%);
       color: #fff;
       padding: 4rem 2rem;
       text-align: center;
@@ -94,11 +94,11 @@
     .screenshot img { display: block; width: 100%; height: auto; }
     .screenshot .placeholder {
       background: var(--blue-l);
-      border: 2px dashed #93c5fd;
+      border: 2px dashed #8cc3ea;
       border-radius: 10px;
       padding: 3rem 2rem;
       text-align: center;
-      color: #3b82f6;
+      color: #0f6bb1;
       font-size: .9rem;
     }
     .screenshot .placeholder strong { display: block; font-size: 1rem; margin-bottom: .25rem; }
@@ -122,12 +122,17 @@
     td { padding: .55rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
     tr:last-child td { border-bottom: none; }
     td:first-child { font-weight: 500; white-space: nowrap; }
+    @media (max-width: 640px) {
+      td:first-child { white-space: normal; }
+      th, td { padding-left: .6rem; padding-right: .6rem; }
+      .hero h2 { font-size: 2rem; }
+    }
 
     /* tip box */
     .tip {
       background: var(--blue-l); border-left: 3px solid var(--blue);
       border-radius: 0 6px 6px 0; padding: .75rem 1rem;
-      font-size: .88rem; color: #1e40af; margin: 1rem 0;
+      font-size: .88rem; color: #0b4a7e; margin: 1rem 0;
     }
     .tip strong { font-weight: 600; }
 
@@ -140,19 +145,19 @@
 <body>
 
 <header>
-  <img src="https://raw.githubusercontent.com/VorticonCmdr/dragon/main/public/icons/dragon64.png" alt="blue dragon" />
-  <h1>blue dragon</h1>
+  <img src="https://raw.githubusercontent.com/VorticonCmdr/dragon/main/public/icons/dragon64.png" alt="" />
+  <h1>Blue Dragon</h1>
 </header>
 
 <div class="hero">
   <h2>Start crawling.</h2>
-  <p>A Chrome extension for web crawling and SEO analysis. Fast parallel fetching, rich metadata extraction, and an interactive results table — all in a browser tab.</p>
+  <p>A Chrome extension for web crawling and SEO analysis. Watch results arrive page by page, find what needs fixing, and export it all, right in a browser tab.</p>
   <div class="badges">
     <span class="badge">⚡ Manifest V3</span>
-    <span class="badge">📊 Tabulator table</span>
+    <span class="badge">🌗 Light and dark</span>
     <span class="badge">🤖 robots.txt aware</span>
     <span class="badge">🗓 Scheduled crawls</span>
-    <span class="badge">v0.0.1</span>
+    <span class="badge">v0.1.0</span>
   </div>
 </div>
 
@@ -169,8 +174,8 @@
           <h3>Add to Chrome</h3>
           <p>Visit the <a href="https://chromewebstore.google.com/detail/blue-dragon/lnohkjclhmcmnadllpmgmpgchgihjehp">Chrome Web Store listing</a> and click <strong>Add to Chrome</strong>, then confirm by clicking <strong>Add extension</strong> in the dialog that appears.</p>
           <div class="screenshot">
-            <img src="screenshots/install.png" alt="Blue dragon on the Chrome Web Store" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-            <div class="placeholder" style="display:none"><strong>install.png</strong>Blue dragon Chrome Web Store listing</div>
+            <img src="screenshots/install.png" alt="Blue Dragon on the Chrome Web Store" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+            <div class="placeholder" style="display:none"><strong>install.png</strong>Blue Dragon Chrome Web Store listing</div>
           </div>
         </div>
       </div>
@@ -178,8 +183,8 @@
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-body">
-          <h3>Open blue dragon</h3>
-          <p>Click the dragon icon <img src="https://raw.githubusercontent.com/VorticonCmdr/dragon/main/public/icons/dragon16.png" style="vertical-align:middle;width:16px"> in the Chrome toolbar. If you don't see it, click the puzzle-piece extensions menu and pin blue dragon. The extension opens as a full tab.</p>
+          <h3>Open Blue Dragon</h3>
+          <p>Click the dragon icon <img src="https://raw.githubusercontent.com/VorticonCmdr/dragon/main/public/icons/dragon16.png" style="vertical-align:middle;width:16px"> in the Chrome toolbar. If you don't see it, click the puzzle-piece extensions menu and pin Blue Dragon. The extension opens as a full tab. Blue Dragon needs Chrome 121 or later.</p>
         </div>
       </div>
 
@@ -194,11 +199,11 @@
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-body">
-          <h3>Build your URL list</h3>
-          <p>Enter a start URL in the <strong>Spider URL</strong> field and click <strong>fetch</strong>. Blue dragon fetches the page and extracts all linked URLs into the list below. Alternatively, paste URLs directly (one per line) or import from CSV / sitemap via the <strong>URLs</strong> menu.</p>
+          <h3>Choose what to crawl</h3>
+          <p>Enter a start URL under <strong>Website</strong>, or switch to <strong>URL list</strong>, <strong>Sitemap</strong> or <strong>CSV</strong>. The defaults suit most sites, and everything else is under <strong>Advanced</strong>.</p>
           <div class="screenshot">
-            <img src="screenshots/crawl-setup.png" alt="Crawl tab with URL list populated" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-            <div class="placeholder" style="display:none"><strong>crawl-setup.png</strong>Crawl tab with a URL list filled in and spider URL entered</div>
+            <img src="screenshots/crawl-setup.png" alt="Setup panel with a start URL entered" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+            <div class="placeholder" style="display:none"><strong>crawl-setup.png</strong>Setup panel with a start URL entered</div>
           </div>
         </div>
       </div>
@@ -207,10 +212,10 @@
         <div class="step-num">2</div>
         <div class="step-body">
           <h3>Start the crawl</h3>
-          <p>Click <strong>crawl</strong>. Pages are fetched concurrently (default: 5 connections). A progress bar tracks completion. The crawl runs in the background service worker — you can close this tab and come back at any time.</p>
+          <p>Click <strong>Start crawl</strong>. Results appear row by row, and the status bar shows progress, speed and time left, with <strong>Pause</strong> and <strong>Stop</strong> always in reach. You can close the tab and come back: the crawl keeps running in the background.</p>
           <div class="screenshot">
-            <img src="screenshots/crawl-running.png" alt="Crawl in progress with progress bar" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-            <div class="placeholder" style="display:none"><strong>crawl-running.png</strong>Active crawl with progress bar and live counter visible</div>
+            <img src="screenshots/crawl-running.png" alt="A crawl in progress, with results filling the table" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+            <div class="placeholder" style="display:none"><strong>crawl-running.png</strong>A crawl in progress, with results filling the table</div>
           </div>
         </div>
       </div>
@@ -219,10 +224,10 @@
         <div class="step-num">3</div>
         <div class="step-body">
           <h3>Explore the results</h3>
-          <p>When the queue empties, the results table renders automatically. Each row is one URL. Rows are colour-coded: red for 4xx/5xx, amber for 3xx. Use the search box to filter, or click any column header to sort. Click a row to open the full URL detail panel.</p>
+          <p>Each row is one URL. Use the quick filters to see errors, redirects or non-indexable pages, search with <code>/</code>, and click a column header to sort. <strong>Columns</strong> adds SEO, response, Open Graph and structured data fields.</p>
           <div class="screenshot">
-            <img src="screenshots/results.png" alt="Results table after crawl" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-            <div class="placeholder" style="display:none"><strong>results.png</strong>Completed crawl — results table with multiple rows and column headers</div>
+            <img src="screenshots/results.png" alt="Results table after a finished crawl" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+            <div class="placeholder" style="display:none"><strong>results.png</strong>Results table after a finished crawl</div>
           </div>
         </div>
       </div>
@@ -230,79 +235,136 @@
     </div>
 
     <div class="tip">
-      <strong>Tip:</strong> Use <strong>Crawls → save current</strong> to persist results. Saved crawls can be reloaded later from <strong>Crawls → load</strong>.
+      <strong>Tip:</strong> There is nothing to save. Every crawl is stored as it runs, and <strong>Saved crawls</strong> in the top bar reopens, renames or deletes it.
     </div>
   </section>
 
-  <!-- CRAWL MODES -->
+  <!-- SOURCES -->
   <section>
-    <h2 class="section">Crawl modes</h2>
+    <h2 class="section">What you can crawl</h2>
     <table>
-      <thead><tr><th>Mode</th><th>What it does</th><th>Good for</th></tr></thead>
+      <thead><tr><th>Source</th><th>What it does</th><th>Good for</th></tr></thead>
       <tbody>
         <tr>
-          <td>list</td>
-          <td>Crawls exactly the URLs in the list — no link following.</td>
-          <td>Auditing a known set of pages (from a sitemap, CSV export, or manual list)</td>
+          <td>Website</td>
+          <td>Starts at one URL and follows links, up to the page limit.</td>
+          <td>Full-site crawls without a URL list</td>
         </tr>
         <tr>
-          <td>autonomous</td>
-          <td>Recursive spider: starts from a single URL, discovers and follows internal links, stays on the same hostname. Capped by <em>max pages</em>.</td>
-          <td>Full-site crawls where you don't have a URL list upfront</td>
+          <td>URL list</td>
+          <td>Crawls exactly these URLs. Duplicates and invalid lines are dropped and counted. You can also add all links from one page.</td>
+          <td>Auditing a known set of pages</td>
+        </tr>
+        <tr>
+          <td>Sitemap</td>
+          <td>Loads a URL or file into the URL list, including <code>.xml.gz</code> files and sitemap indexes.</td>
+          <td>Checking that what you submit to search engines works</td>
+        </tr>
+        <tr>
+          <td>CSV</td>
+          <td>Loads URLs from a file. <code>Clicks</code> and <code>Impressions</code> columns become table columns.</td>
+          <td>Search Console or analytics exports</td>
         </tr>
       </tbody>
     </table>
-    <p style="color:var(--muted);font-size:.88rem;margin-top:.75rem">Switch between modes in <strong>Configuration</strong>. Autonomous mode auto-enables <em>stay on hostname</em>.</p>
+    <p style="color:var(--muted);font-size:.88rem;margin-top:.75rem">A <strong>URL filter</strong> with a regular expression narrows any of these, without changing your list.</p>
   </section>
 
-  <!-- STATS TAB -->
+  <!-- OVERVIEW -->
   <section>
-    <h2 class="section">Stats tab</h2>
-    <p style="margin-bottom:1rem">Live aggregated metrics — updates as each URL is fetched, and also populated when loading a saved crawl.</p>
+    <h2 class="section">Overview</h2>
+    <p style="margin-bottom:1rem">The crawl at a glance, updated while it runs. Click any number or row to see the pages behind it in the table.</p>
 
     <div class="screenshot">
-      <img src="screenshots/stats.png" alt="Stats tab showing summary, status codes, content types" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-      <div class="placeholder" style="display:none"><strong>stats.png</strong>Stats tab after a crawl — Summary section, Status codes, and Content types visible</div>
+      <img src="screenshots/overview.png" alt="Overview tab with totals and charts" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="placeholder" style="display:none"><strong>overview.png</strong>Overview tab with totals and charts</div>
     </div>
 
     <table style="margin-top:1rem">
       <thead><tr><th>Section</th><th>Shows</th></tr></thead>
       <tbody>
-        <tr><td>Summary</td><td>Total encountered, crawled, blocked, internal, external, indexable, non-indexable</td></tr>
-        <tr><td>Status codes</td><td>Count per HTTP status — click any row to filter the results table</td></tr>
-        <tr><td>Content types</td><td>Count per content-type — click any row to filter the results table</td></tr>
+        <tr><td>Totals</td><td>URLs crawled, errors, redirects, indexable share, blocked URLs, median response time</td></tr>
+        <tr><td>Response classes</td><td>Success, redirect, client error, server error, failed and blocked</td></tr>
+        <tr><td>Response time</td><td>How many pages fall into each speed range</td></tr>
+        <tr><td>Status codes</td><td>Count per HTTP status</td></tr>
+        <tr><td>Content types</td><td>Count per content type</td></tr>
       </tbody>
     </table>
-    <div class="tip" style="margin-top:1rem">
-      <strong>Tip:</strong> Clicking <em>Indexable</em> or <em>Internal URLs</em> in Summary filters the results table and switches to the Crawl tab instantly.
-    </div>
   </section>
 
-  <!-- ISSUES TAB -->
+  <!-- ISSUES -->
   <section>
-    <h2 class="section">Issues tab</h2>
-    <p style="margin-bottom:1rem">After a crawl, the Issues tab runs SEO checks across all HTML pages and groups findings by severity.</p>
+    <h2 class="section">Issues</h2>
+    <p style="margin-bottom:1rem">SEO checks across the whole crawl, most serious first. Click a row to open that page's details.</p>
 
     <div class="screenshot">
       <img src="screenshots/issues.png" alt="Issues tab with SEO findings" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-      <div class="placeholder" style="display:none"><strong>issues.png</strong>Issues tab open with at least one expanded section showing URLs</div>
+      <div class="placeholder" style="display:none"><strong>issues.png</strong>Issues tab with one expanded section</div>
     </div>
 
     <table style="margin-top:1rem">
       <thead><tr><th>Check</th><th>Severity</th></tr></thead>
       <tbody>
-        <tr><td>Broken pages (4xx / 5xx)</td><td>Error</td></tr>
+        <tr><td>Broken pages (4xx, 5xx, no answer)</td><td>Error</td></tr>
+        <tr><td>Pages linking to broken URLs</td><td>Error</td></tr>
+        <tr><td>Broken external links</td><td>Error</td></tr>
+        <tr><td>Redirected pages</td><td>Warning</td></tr>
         <tr><td>Blocked by robots.txt</td><td>Warning</td></tr>
-        <tr><td>Redirects</td><td>Warning</td></tr>
         <tr><td>Missing title</td><td>Warning</td></tr>
-        <tr><td>Missing H1</td><td>Warning</td></tr>
-        <tr><td>Missing meta description</td><td>Info</td></tr>
-        <tr><td>Missing canonical</td><td>Info</td></tr>
         <tr><td>Duplicate titles</td><td>Warning</td></tr>
-        <tr><td>Broken outbound links</td><td>Error</td></tr>
+        <tr><td>Multiple canonicals</td><td>Warning</td></tr>
+        <tr><td>Noindex pages</td><td>Notice</td></tr>
+        <tr><td>Missing H1, meta description or canonical</td><td>Notice</td></tr>
+        <tr><td>Truncated pages (over 5 MB)</td><td>Notice</td></tr>
       </tbody>
     </table>
-    <p style="color:var(--muted);font-size:.88rem;margin-top:.75rem">Clicking an issue row opens the URL detail view for that page.</p>
+  </section>
+
+  <!-- DETAILS -->
+  <section>
+    <h2 class="section">Page details</h2>
+    <p style="margin-bottom:1rem">Click a row to open everything about that URL beside the table: the full redirect chain, response data, SEO fields with length hints, links in and out, hreflang, Open Graph, structured data and headers.</p>
+
+    <div class="screenshot">
+      <img src="screenshots/detail.png" alt="Page details panel beside the results table" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="placeholder" style="display:none"><strong>detail.png</strong>Page details panel beside the results table</div>
+    </div>
+  </section>
+
+  <!-- RANKING -->
+  <section>
+    <h2 class="section">PageRank and CheiRank</h2>
+    <p style="margin-bottom:1rem">Once a crawl has ended, click <strong>Rank pages</strong> in the Pages toolbar or on the Overview. Blue Dragon scores every crawled page from your site's internal links, right in your browser.</p>
+
+    <table>
+      <thead><tr><th>Score</th><th>High for</th><th>Tells you</th></tr></thead>
+      <tbody>
+        <tr><td>PageRank</td><td>Pages that strong pages link to</td><td>Where your internal linking sends authority</td></tr>
+        <tr><td>CheiRank</td><td>Pages whose links reach the most</td><td>Which pages work as hubs</td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--muted);font-size:.88rem;margin-top:.75rem">Scores are shown relative to the strongest page (100), and are saved with the crawl and included in the CSV export. <code>nofollow</code>, <code>ugc</code> and <code>sponsored</code> links pass no score, and external URLs and pages blocked by robots.txt are left out.</p>
+
+    <h3 style="font-size:1rem;margin:1.5rem 0 .25rem">Where the rank sits</h3>
+    <p style="margin-bottom:.5rem">The Overview then charts rank by click depth, by site section and by kind of page. Rank piling up on shallow levels, or on errors and redirects, is what to look for.</p>
+    <div class="screenshot">
+      <img src="screenshots/rank-levels.png" alt="Share of pages and rank per level" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="placeholder" style="display:none"><strong>rank-levels.png</strong>Share of pages and rank per level</div>
+    </div>
+
+    <h3 style="font-size:1rem;margin:1.5rem 0 .25rem">How evenly it is spread</h3>
+    <p style="margin-bottom:.5rem">Histograms show pages in multiples of the average rank, and a curve shows how much the strongest pages hold.</p>
+    <div class="screenshot">
+      <img src="screenshots/rank-spread.png" alt="Histograms of PageRank and CheiRank, and how much rank the strongest pages hold" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="placeholder" style="display:none"><strong>rank-spread.png</strong>Histograms of PageRank and CheiRank, and how much rank the strongest pages hold</div>
+    </div>
+
+    <h3 style="font-size:1rem;margin:1.5rem 0 .25rem">Authorities and hubs</h3>
+    <p style="margin-bottom:.5rem">Every page by its PageRank and CheiRank percentile. Click a cell or a button to list those pages in the table.</p>
+    <div class="screenshot">
+      <img src="screenshots/rank-quadrants.png" alt="Grid of pages by PageRank and CheiRank percentile" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="placeholder" style="display:none"><strong>rank-quadrants.png</strong>Grid of pages by PageRank and CheiRank percentile</div>
+    </div>
   </section>
 
   <!-- KEY FEATURES -->
@@ -311,35 +373,66 @@
     <div class="grid">
       <div class="card">
         <div class="card-icon">⚡</div>
-        <h3>Parallel fetching</h3>
-        <p>Configurable concurrent connections (default 5, up to 20). Crawl delay and max retries are adjustable.</p>
+        <h3>Fast and light</h3>
+        <p>Up to 32 parallel requests. Only HTML is downloaded, and memory stays flat however large the crawl gets.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔁</div>
+        <h3>Crawls that survive</h3>
+        <p>Pause, close the tab, or let Chrome stop the background worker. The crawl picks up where it left off.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🤖</div>
+        <h3>Polite by default</h3>
+        <p>Follows robots.txt and crawl-delay for the selected User-Agent, retries with backoff, and honours Retry-After. Overrides can be set per site.</p>
       </div>
       <div class="card">
         <div class="card-icon">🔍</div>
         <h3>Rich metadata</h3>
-        <p>Extracts title, description, H1, canonical, robots, Open Graph tags, and Schema.org structured data (publisher, dates, authors, headlines).</p>
+        <p>Title, description, H1, canonical, robots meta and X-Robots-Tag, hreflang, Open Graph, Schema.org data and every redirect hop.</p>
       </div>
       <div class="card">
-        <div class="card-icon">🤖</div>
-        <h3>Robots.txt aware</h3>
-        <p>Respects robots.txt per the configured User-Agent. Overrides can be set per hostname without touching the live server.</p>
+        <div class="card-icon">🕸</div>
+        <h3>Link analysis</h3>
+        <p>PageRank and CheiRank on demand, with charts by level, section and page type, and a grid of authorities and hubs.</p>
       </div>
       <div class="card">
         <div class="card-icon">🗓</div>
         <h3>Scheduled crawls</h3>
-        <p>Set up recurring crawls (hourly to weekly) with URL sources and a filter. Runs in the background even when the tab is closed.</p>
+        <p>Recurring crawls from hourly to weekly. They run in the background while Chrome is open, even with the tab closed.</p>
       </div>
       <div class="card">
         <div class="card-icon">📤</div>
         <h3>CSV export</h3>
-        <p>Export all rows and all columns (including hidden ones) as CSV. Import CSVs or sitemap XML files as URL lists.</p>
+        <p>Exports the rows you see with all columns, including hidden ones, and opens correctly in Excel.</p>
       </div>
       <div class="card">
         <div class="card-icon">💾</div>
         <h3>HTML archiving</h3>
-        <p>Optionally save raw HTML responses to the browser's Origin Private File System. View, open, or download individual pages.</p>
+        <p>Optionally keeps the raw HTML of each page in your browser. Preview a page safely, download it, or export a ZIP.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⌨️</div>
+        <h3>Built for the keyboard</h3>
+        <p>Press <code>⌘K</code> or <code>Ctrl K</code> to search every action, and <code>/</code> to filter the table.</p>
       </div>
     </div>
+
+    <div class="screenshot" style="margin-top:1.5rem">
+      <img src="screenshots/dark.png" alt="Overview tab in the dark theme" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="placeholder" style="display:none"><strong>dark.png</strong>Overview tab in the dark theme</div>
+    </div>
+  </section>
+
+  <!-- UPGRADING -->
+  <section>
+    <h2 class="section">Upgrading from 0.0.1</h2>
+    <p style="margin-bottom:1rem">Version 0.1.0 is a rebuild of both the crawler and the interface. Three things behave differently:</p>
+    <ul style="padding-left:1.2rem;display:flex;flex-direction:column;gap:.5rem">
+      <li><strong>Saved crawls are converted on first start.</strong> This is one-way: older versions can't read them afterwards.</li>
+      <li><strong>robots.txt is now enforced.</strong> The setting existed before but had no effect, so a site may show blocked pages that used to be fetched. If its robots.txt returns a server error or can't be reached, the whole site is blocked. You can turn this off under <strong>Advanced</strong>, or add an override for a site.</li>
+      <li><strong>Text extraction is gone,</strong> along with the <code>content</code> column.</li>
+    </ul>
   </section>
 
   <!-- LINKS -->
@@ -349,13 +442,14 @@
       <li>📦 <a href="https://github.com/VorticonCmdr/dragon">GitHub repository</a></li>
       <li>🐛 <a href="https://github.com/VorticonCmdr/dragon/issues">Report an issue</a></li>
       <li>📄 <a href="https://github.com/VorticonCmdr/dragon/blob/main/README.md">Full README</a></li>
+      <li>🏷 <a href="https://github.com/VorticonCmdr/dragon/releases">Releases and changelog</a></li>
     </ul>
   </section>
 
 </main>
 
 <footer>
-  blue dragon v0.0.1 &nbsp;·&nbsp; Apache 2.0 &nbsp;·&nbsp;
+  Blue Dragon v0.1.0 &nbsp;·&nbsp; Apache 2.0 &nbsp;·&nbsp;
   <a href="https://github.com/VorticonCmdr/dragon">VorticonCmdr/dragon</a>
 </footer>
 

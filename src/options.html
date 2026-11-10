@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Blue Dragon options</title>
+    <link rel="icon" href="icons/dragon32.png" />
+    <script src="/theme-init.js"></script>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="settings-page">
+    <header class="settings-top">
+      <img src="icons/dragon32.png" alt="" width="26" height="26" />
+      <h1>Blue Dragon options</h1>
+    </header>
+
+    <main class="settings-main">
+      <section class="card" aria-labelledby="uaTitle">
+        <h2 class="card-title" id="uaTitle">Crawler User-Agent</h2>
+        <label class="field">
+          <span class="field-label">Identify as</span>
+          <select id="preset" class="input"></select>
+        </label>
+        <label class="field" id="customWrap" hidden>
+          <span class="field-label">Custom User-Agent</span>
+          <textarea id="customUA" class="input input-mono" rows="3" placeholder="Mozilla/5.0 …"></textarea>
+        </label>
+        <div class="field">
+          <span class="field-label">Active now</span>
+          <div class="mono-box" id="currentUA"></div>
+        </div>
+        <div class="form-row">
+          <button id="saveBtn" class="btn btn-primary">Save</button>
+          <span id="status" class="status-msg" role="status"></span>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="presetTitle">
+        <h2 class="card-title" id="presetTitle">URL filter presets</h2>
+        <div id="presetList" class="chips-col"></div>
+        <div class="add-form">
+          <label class="field">
+            <span class="field-label">Name</span>
+            <input type="text" id="newName" class="input" placeholder="Products only" />
+          </label>
+          <label class="field">
+            <span class="field-label">Regular expression</span>
+            <input type="text" id="newRegex" class="input input-mono" placeholder="/product/" spellcheck="false" />
+          </label>
+          <label class="field">
+            <span class="field-label">Mode</span>
+            <select id="newType" class="input">
+              <option value="include">Only matching</option>
+              <option value="exclude">Skip matching</option>
+            </select>
+          </label>
+          <button id="addPresetBtn" class="btn">Add</button>
+        </div>
+        <span id="regexStatus" class="status-msg" role="status"></span>
+      </section>
+
+      <section class="card" aria-labelledby="crawlsTitle">
+        <h2 class="card-title" id="crawlsTitle">Storage</h2>
+        <div class="field">
+          <div class="quota-track"><div class="quota-fill" id="quotaFill" style="width:0%"></div></div>
+          <span class="hint" id="quotaLabel">Reading storage usage…</span>
+        </div>
+        <div class="field gap-2" id="crawlList"></div>
+        <span id="crawlManagerStatus" class="status-msg" role="status"></span>
+      </section>
+    </main>
+
+    <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+    <script type="module" src="./options.js"></script>
+  </body>
+</html>

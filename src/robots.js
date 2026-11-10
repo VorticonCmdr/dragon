@@ -1,3 +1,5 @@
+import '@fontsource-variable/plus-jakarta-sans';
+
 function escHtml(s) {
   return String(s)
     .replace(/&/g, '&amp;')
@@ -16,7 +18,7 @@ async function load() {
   const origins = [...new Set([...Object.keys(robotsFetched), ...Object.keys(robotsOverrides)])].sort();
 
   if (origins.length === 0) {
-    list.innerHTML = '<p id="noData">No robots.txt data yet — run a crawl first, or add an override below.</p>';
+    list.innerHTML = '<p class="hint">No robots.txt files yet. Run a crawl, or add an override below.</p>';
     return;
   }
 
@@ -30,30 +32,30 @@ async function load() {
     card.dataset.origin = origin;
 
     const fetchedHtml = fetched != null
-      ? `<div>
-           <label>Fetched robots.txt</label>
-           <textarea class="readonly" readonly rows="6">${fetched ? escHtml(fetched) : ''}</textarea>
-         </div>`
+      ? `<label class="field">
+           <span class="field-label">Fetched robots.txt</span>
+           <textarea class="input input-mono" readonly rows="6">${fetched ? escHtml(fetched) : ''}</textarea>
+         </label>`
       : '';
 
     card.innerHTML = `
-      <div class="card-header">
-        <span class="origin">${escHtml(origin)}</span>
-        <span class="badge ${hasOverride ? 'badge-override' : 'badge-fetched'}">${hasOverride ? 'override active' : 'fetched'}</span>
+      <div class="robots-head">
+        <span class="robots-origin">${escHtml(origin)}</span>
+        <span class="pill ${hasOverride ? 'pill-3xx' : 'pill-blocked'}">${hasOverride ? 'Override active' : 'As fetched'}</span>
       </div>
-      <div class="cols">
+      <div class="robots-cols">
         ${fetchedHtml}
-        <div>
-          <label>Override <span style="color:#cbd5e1;font-weight:400;text-transform:none">(empty = allow all)</span></label>
-          <textarea class="override-input${hasOverride ? '' : ' empty'}" rows="6"
+        <label class="field">
+          <span class="field-label">Override (empty allows everything)</span>
+          <textarea class="input input-mono override-input" rows="6" spellcheck="false"
             placeholder="User-agent: *&#10;Disallow:">${hasOverride ? escHtml(override) : ''}</textarea>
-        </div>
+        </label>
       </div>
-      <div class="row">
-        <button class="btn-primary save-btn">Save override</button>
-        ${hasOverride ? '<button class="btn-danger clear-btn">Clear override</button>' : ''}
-        <button class="btn-ghost fetch-btn">Re-fetch</button>
-        <span class="status-msg card-status"></span>
+      <div class="form-row">
+        <button class="btn btn-primary save-btn">Save override</button>
+        ${hasOverride ? '<button class="btn clear-btn">Remove override</button>' : ''}
+        <button class="btn btn-ghost fetch-btn">Fetch again</button>
+        <span class="status-msg card-status" role="status"></span>
       </div>`;
 
     list.appendChild(card);

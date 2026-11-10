@@ -12,6 +12,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         dragon: resolve(__dirname, 'src/dragon.html'),
+        options: resolve(__dirname, 'src/options.html'),
+        robots: resolve(__dirname, 'src/robots.html'),
         background: resolve(__dirname, 'src/background.js'),
       },
       output: {

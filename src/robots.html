@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Blue Dragon robots.txt overrides</title>
+    <link rel="icon" href="icons/dragon32.png" />
+    <script src="/theme-init.js"></script>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="settings-page">
+    <header class="settings-top">
+      <img src="icons/dragon32.png" alt="" width="26" height="26" />
+      <h1>robots.txt overrides</h1>
+    </header>
+
+    <main class="settings-main">
+      <p class="hint">An override replaces a site's robots.txt in every future crawl. Sites appear here once they have been crawled.</p>
+      <div id="robotsList" class="settings-main !p-0 !max-w-none"></div>
+
+      <section class="card" aria-labelledby="addTitle">
+        <h2 class="card-title" id="addTitle">Add an override</h2>
+        <label class="field">
+          <span class="field-label">Site</span>
+          <input type="url" id="newOrigin" class="input" placeholder="https://example.com" spellcheck="false" />
+        </label>
+        <label class="field">
+          <span class="field-label">robots.txt content (empty allows everything)</span>
+          <textarea id="newContent" class="input input-mono" rows="6" placeholder="User-agent: *&#10;Disallow: /private/" spellcheck="false"></textarea>
+        </label>
+        <div class="form-row">
+          <button class="btn" id="fetchNewBtn">Fetch current file</button>
+          <button class="btn btn-primary" id="addBtn">Save override</button>
+          <span id="addStatus" class="status-msg" role="status"></span>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./robots.js"></script>
+  </body>
+</html>

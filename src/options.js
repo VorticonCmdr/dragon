@@ -1,3 +1,6 @@
+import { crawlDB } from './db.js';
+import '@fontsource-variable/plus-jakarta-sans';
+
 const PRESETS = [
   { label: 'Googlebot Desktop', value: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://google.com)' },
   { label: 'Googlebot Smartphone', value: 'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://google.com)' },
@@ -59,20 +62,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (isCustom) {
     select.value = '__custom__';
     customUA.value = userAgent;
-    customWrap.style.display = 'block';
+    customWrap.hidden = false;
   } else {
     select.value = userAgent;
   }
   currentUAEl.textContent = userAgent || '(Browser default)';
 
   select.addEventListener('change', () => {
-    customWrap.style.display = select.value === '__custom__' ? 'block' : 'none';
+    customWrap.hidden = select.value !== '__custom__';
   });
 
   document.getElementById('saveBtn').addEventListener('click', async () => {
     const ua = select.value === '__custom__'
       ? customUA.value.trim()
       : select.value;
+    if (select.value === '__custom__' && !ua) {
+      status.classList.add('is-error');
+      status.textContent = 'Enter a User-Agent first.';
+      return;
+    }
+    status.classList.remove('is-error');
     await chrome.storage.local.set({ userAgent: ua });
     await applyUA(ua);
     currentUAEl.textContent = ua || '(Browser default)';
@@ -88,7 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderPresets(presets) {
     presetList.innerHTML = '';
     if (!presets.length) {
-      presetList.innerHTML = '<span class="empty-hint">No presets saved yet.</span>';
+      presetList.innerHTML = '<span class="hint">No presets yet.</span>';
       return;
     }
     presets.forEach(p => {
@@ -97,8 +106,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       row.innerHTML = `
         <span class="preset-name">${escapeHtml(p.name)}</span>
         <span class="preset-regex" title="${escapeHtml(p.regex)}">${escapeHtml(p.regex)}</span>
-        <span class="badge badge-${p.type}">${p.type}</span>
-        <button class="btn-delete" data-id="${p.id}">✕</button>
+        <span class="pill ${p.type === 'include' ? 'pill-2xx' : 'pill-4xx'}">${p.type === 'include' ? 'Only matching' : 'Skip matching'}</span>
+        <button class="btn btn-ghost btn-sm btn-delete" data-id="${p.id}">Remove</button>
       `;
       presetList.appendChild(row);
     });
@@ -126,7 +135,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const type = document.getElementById('newType').value;
 
     if (!name || !regex) {
-      regexStatus.style.color = '#dc2626';
+      regexStatus.classList.add('is-error');
       regexStatus.textContent = 'Name and regex are required.';
       setTimeout(() => { regexStatus.textContent = ''; }, 2500);
       return;
@@ -135,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       new RegExp(regex);
     } catch {
-      regexStatus.style.color = '#dc2626';
+      regexStatus.classList.add('is-error');
       regexStatus.textContent = 'Invalid regex.';
       setTimeout(() => { regexStatus.textContent = ''; }, 2500);
       return;
@@ -150,7 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('newName').value = '';
     document.getElementById('newRegex').value = '';
     document.getElementById('newType').value = 'include';
-    regexStatus.style.color = '#16a34a';
+    regexStatus.classList.remove('is-error');
     regexStatus.textContent = 'Preset saved.';
     setTimeout(() => { regexStatus.textContent = ''; }, 2000);
   });
@@ -167,7 +176,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function cmMsg(text, ok = true) {
-    cmStatus.style.color = ok ? '#16a34a' : '#dc2626';
+    cmStatus.classList.toggle('is-error', !ok);
     cmStatus.textContent = text;
     setTimeout(() => { cmStatus.textContent = ''; }, 3000);
   }
@@ -270,7 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (handle.kind !== 'file') continue;
       files.push({ name, data: new Uint8Array(await (await handle.getFile()).arrayBuffer()) });
     }
-    if (!files.length) { cmMsg('No OPFS files found.', false); return; }
+    if (!files.length) { cmMsg('This crawl has no archived files.', false); return; }
     const zip = buildZip(files);
     const a = Object.assign(document.createElement('a'), {
       href: URL.createObjectURL(new Blob([zip], { type: 'application/zip' })),
@@ -284,6 +293,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   function startInlineRename(nameEl, crawlId) {
     const current = nameEl.textContent;
     const input = document.createElement('input');
+    input.className = 'input';
+    input.setAttribute('aria-label', 'Crawl name');
     input.value = current;
     nameEl.textContent = '';
     nameEl.appendChild(input);
@@ -328,7 +339,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const allIds = new Set([...idbMap.keys(), ...opfsMap.keys()]);
 
     if (!allIds.size) {
-      crawlList.innerHTML = '<span class="crawl-empty">No saved crawls found.</span>';
+      crawlList.innerHTML = '<span class="hint">No saved crawls.</span>';
       return;
     }
 
@@ -353,29 +364,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Meta line
       const metaParts = [];
-      if (idb) metaParts.push('IDB');
-      if (opfs) metaParts.push(`OPFS: ${formatBytes(opfs.size)} · ${opfs.fileCount} files`);
+      if (idb) metaParts.push(`${(idb.counts?.crawled ?? 0).toLocaleString('en-US')} URLs`);
+      if (opfs) metaParts.push(`HTML archive: ${formatBytes(opfs.size)}, ${opfs.fileCount} files`);
 
       // Actions
       const actions = [];
-      if (idb) actions.push(`<button class="btn-sm btn-rename" data-id="${id}">Rename</button>`);
-      if (opfs) actions.push(`<button class="btn-sm btn-zip" data-id="${id}" data-dir="${opfs.dirName}">↓ ZIP</button>`);
-      if (idb && !opfs) actions.push(`<button class="btn-sm danger btn-del-idb" data-id="${id}">Delete IDB</button>`);
+      if (idb) actions.push(`<button class="btn btn-sm btn-rename" data-id="${id}">Rename</button>`);
+      if (opfs) actions.push(`<button class="btn btn-sm btn-zip" data-id="${id}" data-dir="${opfs.dirName}">↓ ZIP</button>`);
+      if (idb && !opfs) actions.push(`<button class="btn btn-sm btn-del-idb" data-id="${id}">Delete data</button>`);
       if (idb && opfs) {
-        actions.push(`<button class="btn-sm danger btn-del-idb" data-id="${id}">Delete IDB</button>`);
-        actions.push(`<button class="btn-sm danger btn-del-opfs" data-dir="${opfs.dirName}">Delete OPFS</button>`);
-        actions.push(`<button class="btn-sm danger btn-del-all" data-id="${id}" data-dir="${opfs.dirName}">Delete all</button>`);
+        actions.push(`<button class="btn btn-sm btn-del-idb" data-id="${id}">Delete data</button>`);
+        actions.push(`<button class="btn btn-sm btn-del-opfs" data-dir="${opfs.dirName}">Delete HTML archive</button>`);
+        actions.push(`<button class="btn btn-sm btn-del-all" data-id="${id}" data-dir="${opfs.dirName}">Delete everything</button>`);
       }
       if (isOrphan && opfs) {
-        actions.push(`<button class="btn-sm danger btn-del-opfs" data-dir="${opfs.dirName}">Delete OPFS</button>`);
+        actions.push(`<button class="btn btn-sm btn-del-opfs" data-dir="${opfs.dirName}">Delete HTML archive</button>`);
       }
 
       row.innerHTML = `
-        <div class="crawl-row-top">
-          <span class="crawl-row-name">${isOrphan ? '' : escapeHtml(displayName)}</span>
-          ${isOrphan ? '<span class="orphan-badge">⚠ no IDB entry</span>' : ''}
-          ${isOrphan ? `<span style="font-size:0.75rem;color:#92400e;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(id)}</span>` : ''}
-        </div>
+        <span class="crawl-row-name">${isOrphan ? `Archive without a crawl: ${escapeHtml(id)}` : escapeHtml(displayName)}</span>
         <div class="crawl-row-meta">${metaParts.join(' · ')}</div>
         <div class="crawl-row-actions">${actions.join('')}</div>`;
 
@@ -400,25 +407,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     crawlList.querySelectorAll('.btn-del-idb').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('Delete IDB entry? OPFS files will be kept.')) return;
+        if (!confirm('Delete the data of this crawl? Its HTML archive is kept.')) return;
         await crawlDB.remove(btn.dataset.id);
-        cmMsg('IDB entry deleted.');
+        cmMsg('Crawl data deleted.');
         await loadCrawlManager();
       });
     });
 
     crawlList.querySelectorAll('.btn-del-opfs').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm(`Delete OPFS directory "${btn.dataset.dir}"?`)) return;
+        if (!confirm('Delete the HTML archive of this crawl?')) return;
         await deleteOpfsDir(rootDirName, btn.dataset.dir);
-        cmMsg('OPFS data deleted.');
+        cmMsg('HTML archive deleted.');
         await loadCrawlManager();
       });
     });
 
     crawlList.querySelectorAll('.btn-del-all').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('Delete IDB entry and all OPFS data?')) return;
+        if (!confirm('Delete this crawl and its HTML archive?')) return;
         await Promise.all([
           crawlDB.remove(btn.dataset.id),
           deleteOpfsDir(rootDirName, btn.dataset.dir),

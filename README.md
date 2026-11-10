@@ -1,167 +1,149 @@
 # blue dragon
 
-A Chrome extension for crawling and SEO analysis. Opens as a full tab, fetches pages in parallel, and extracts metadata, structured data, and article text into an interactive table.
+A Chrome extension for crawling and SEO analysis. Opens as a full tab, fetches pages in parallel, and extracts metadata, links, and structured data into an interactive table.
 
 **[Getting started guide →](https://vorticoncmdr.github.io/dragon/)** · [Chrome Web Store](https://chromewebstore.google.com/detail/blue-dragon/lnohkjclhmcmnadllpmgmpgchgihjehp)
 
 ## Installation
 
+Install it from the [Chrome Web Store](https://chromewebstore.google.com/detail/blue-dragon/lnohkjclhmcmnadllpmgmpgchgihjehp), or build it yourself:
+
 1. `npm install && npm run build`
 2. Open `chrome://extensions` → enable Developer mode → **Load unpacked** → select the `dist/` folder
 3. Click the dragon icon in the toolbar
 
-## Crawl tab
+Every [release](https://github.com/VorticonCmdr/dragon/releases) also has a built ZIP: unzip it and load that folder the same way.
 
-### Building a URL list
+Requires Chrome 121 or later.
 
-**Spider URL** — enter a page URL and click **fetch**. The extension fetches the page and extracts all linked URLs into the URL list below.
+## The workspace
 
-**URL list** — paste or type URLs directly, one per line.
+One screen holds everything: the **setup panel** on the left, a **status bar** that always shows what the crawler is doing, and the results in four tabs: **Pages**, **Overview**, **Issues** and **Links**. Results appear row by row while the crawl runs.
 
-**CSV import** — via the **URLs → CSV** menu. Drag & drop or pick a CSV file. Columns named `URL`, `page`, or `Page` are imported as URLs.
+Press <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> to search every action, and <kbd>/</kbd> to filter the table. The theme follows your system; the moon icon overrides it.
 
-**Sitemap import** — via the **URLs → sitemap** menu. Enter a sitemap XML URL (including `.gz` sitemaps). All `<loc>` entries are appended to the URL list.
+### What to crawl
 
-### Filtering the URL list
+| Source | What it does |
+|--------|--------------|
+| **Website** | Starts at a URL and follows links, up to the page limit. Stays on the start hostname by default; if the start URL redirects to another host (such as `www`), the crawl stays on that one. |
+| **URL list** | Crawls exactly these URLs, one per line. Duplicates and invalid lines are dropped and counted. *Add links from a page* imports every link on one page. |
+| **Sitemap** | Loads a URL or file, including `.xml.gz` and sitemap indexes, into the URL list. |
+| **CSV** | Loads a file with a `URL`, `Page`, `Address`, `Top pages` or `Landing page` column into the URL list. `Clicks` and `Impressions` columns become table columns. |
 
-A regex filter can be applied to the URL list before crawling. Write a pattern in the filter field and click **include** (keep only matching) or **exclude** (remove matching). Three quick presets are available: `uuid`, `ends with /`, `ends with .html`. Custom named presets can be saved and managed in the extension Options page and will appear in the same dropdown with their type applied automatically on click.
+### URL filter
 
-The URL counter turns **orange** when the number of entered URLs exceeds the configured max pages limit while in list mode.
+*Only matching* or *Skip matching* with a regular expression. It limits discovered links in a website crawl, and in a URL list it shows how many URLs will be crawled without changing the list. Presets from the Options page appear below the field.
 
 ### Crawling
 
-Click **crawl** to start. Pages are fetched concurrently up to the configured connection limit. A progress bar tracks completion. The results table renders automatically when the queue is empty.
+Crawls run in the background service worker. They **survive closing the tab**, and if Chrome stops the worker the crawl resumes from its last checkpoint. **Pause** holds the crawl, also across a reload, and **Stop** ends it and keeps what was found.
 
-The crawl runs in the background service worker and **survives closing the extension tab** — reopen the tab at any time to reconnect and see current progress.
+### Pages
 
-### Crawl modes
+One row per URL. **Columns** opens a searchable list of every available column, grouped by topic, and remembers your choice.
 
-| Mode | Behaviour |
-|------|-----------|
-| **list** | Crawls exactly the URLs in the list |
-| **autonomous** | Recursive spider — discovers and follows internal links, stays on the start hostname. Automatically enables *stay on hostname*. |
+| Group | Columns |
+|-------|---------|
+| Essentials (shown by default) | URL, status, title, indexable, depth, time, size |
+| SEO | H1, meta description, canonical, robots meta, X-Robots-Tag, keywords, hreflang tags, crawlable |
+| Response | Redirected, first hop status, redirect target, content type, content encoding, charset, decoded size, truncated, retries, fetched at, error |
+| Links | Inbound, outbound and broken links, external |
+| Open Graph | Title, description, image, site name |
+| Structured data | Headline, alternate headline, authors, publisher, dates |
+| Ranking | PageRank, CheiRank and their positions (after *Rank pages*) |
+| Search data | Clicks, impressions (from an imported CSV) |
 
-In autonomous mode the **max pages limit** caps how many URLs are crawled in total.
+Redirects show every hop's first status, such as `301 → 200`. Only HTML is downloaded: other files are recorded from their headers, and HTML is capped at 5 MB.
 
-An optional **crawl filter regex** (include or exclude) can be set in Configuration to restrict which discovered URLs are added to the queue during a recursive crawl.
+**Quick filters** narrow the table to errors, redirects, non-indexable, blocked or external URLs, and each column has its own filter.
 
-In **list mode**, outbound links (links to external hosts) are detected on each page and stored for the link explorer. If **fetch outbound** is enabled in Configuration, those external URLs are also fully crawled (status code, title, H1, etc.) and appear in the results table with the `outbound` column set to `true`. They are not added to the recursive queue.
+**Export CSV** downloads the rows currently shown, with all columns including hidden ones, and opens correctly in Excel. **HTML ZIP** appears for crawls with an HTML archive.
 
-### Results table
+### Page details
 
-Each row is one crawled URL. Rows are colour-coded by HTTP status: red for 4xx/5xx, amber for 3xx. Columns visible by default are marked with ✓; all others can be enabled via the **columns** toggle button.
+Click a row to open a panel beside the table: redirect chain, response, SEO fields with length hints, links in and out, hreflang, Open Graph, structured data and response headers. Archived HTML can be previewed in a sandboxed frame. Arrows step back through the pages you visited.
 
-| Column | Default | Description |
-|--------|:-------:|-------------|
-| url | ✓ | Crawled URL |
-| status | ✓ | HTTP status code |
-| duration (ms) | ✓ | Response time |
-| redirected | ✓ | Whether the request was redirected |
-| encoded size | ✓ | Compressed response size |
-| crawlable | ✓ | Whether the active bot UA is allowed by robots.txt |
-| indexable | ✓ | True when status is 2xx, content-type is text/html, and no `noindex` directive is present |
-| canonical | | `<link rel="canonical">` |
-| title | | `<title>` |
-| description | | `<meta name="description">` |
-| keyword | | `<meta name="keywords">` |
-| robots | | `<meta name="robots">` content |
-| h1 | | First `<h1>` |
-| content-type | | `Content-Type` response header |
-| decoded size | | Uncompressed response size |
-| deliveryType | | Cache delivery type from Performance API |
-| content-encoding | | Transfer encoding used (gzip, br, identity, etc.) |
-| next-hop-protocol | | HTTP protocol version (h2, http/1.1, h3) |
-| timestamp | | Time of the request |
-| ok | | Whether the response was successful (2xx) |
-| og:image / og:title / og:site / og:description | | Open Graph tags |
-| publisher | | `schema.org` publisher name |
-| dateModified / datePublished | | `schema.org` dates |
-| authors | | `schema.org` author names |
-| headline / altHeadline | | `schema.org` headlines |
-| content | | Article body text (requires *extract text* setting) |
-| outbound links | | Number of internal links found on the page (autonomous mode) |
-| inbound links | | Number of internal links pointing to this page (autonomous mode) |
-| outbound | ✓ | Whether this URL was crawled as an outbound-only link (list mode + fetch outbound) |
-| broken outbound | | Number of outbound links resolving to a 4xx/5xx response |
-| html | | View/copy stored HTML (requires *save HTML to OPFS* setting) |
-| clicks / impressions | | Available if a Search Console CSV was imported |
+### Overview
 
-**Search** — filter visible rows by any text.  
-**Export CSV** — downloads all rows and all columns (including hidden ones, except the internal HTML file path). The filename follows the crawl-save naming convention: `{hostname}_{datetime}.csv`.
+Tiles and charts for response classes, response times, status codes and content types. Everything is clickable and filters the Pages tab to the rows behind the number.
 
-### URL detail view
+### PageRank and CheiRank
 
-Click any row to open a detail panel for that URL. The panel shows:
+**Rank pages** (in the Pages toolbar, the Overview, or ⌘K) scores every crawled page from the crawl's internal link graph, on demand once a crawl has ended:
 
-- All crawled fields grouped by category (fetch metadata, Open Graph, Schema.org, custom data, …)
-- **Outbound links** — every link found on the page, with its HTTP status, `follow` attribute, and directive source. Rows are colour-coded (red = broken, amber = redirect). Click a row to drill into that URL's detail view.
-- **Inbound links** — every crawled page that links to this URL, with the same columns and drill-down behaviour.
+- **PageRank** is high for pages that many strong pages link to.
+- **CheiRank** is PageRank of the reversed graph: high for hubs whose links reach the most.
 
-### Internal link explorer
+Both use the random-surfer model with damping 0.85. Links marked `nofollow`, `ugc` or `sponsored` carry no score, external URLs and pages blocked by robots.txt are left out, and a page without links out spreads its score evenly. Scores are shown relative to the best page (100), with the position (`#1`, `#2`, …) beside them, in the table, the page details and the Overview's top-ten lists. The result is stored with the crawl and exported to CSV.
 
-After an autonomous crawl, the **links** button opens a modal table of every internal link edge discovered: source URL → target URL, the `follow` status (`follow`, `nofollow`, `ugc`, `sponsored`), and the directive source (`anchor` rel attribute, `meta` robots tag, or `header` X-Robots-Tag). The table is searchable and paginated.
+Once ranked, the Overview also shows where the rank sits:
 
-### Saving and loading crawls
+| Chart | What it answers |
+|-------|-----------------|
+| **By level** | How pages and rank are distributed over clicks from the start URL, per level and cumulative, with a table. Only for crawls started from one URL. |
+| **By site section** | Each top-level folder's share of pages against its share of each rank. |
+| **What kind of pages hold the rank** | How much rank sits on errors, redirects, canonicalised, non-HTML and noindex pages instead of indexable ones. |
+| **How the rank is spread** | Histograms in multiples of the average rank, and how much the strongest pages hold. |
+| **Authorities and hubs** | Pages by PageRank and CheiRank percentile. The top quarter of PageRank are authorities, of CheiRank hubs, and the bottom tenth of PageRank is low PageRank. Click a cell or a button to list those pages. |
 
-Use the **Crawls** menu to save the current crawl, load a previous one, or delete saved crawls. Crawls are stored in `chrome.storage.local`. Scheduled crawls are automatically saved here after each run. Saved crawls are named `{hostname} {datetime}` by default.
+### Links
 
-## Issues tab
+Every link in the crawl: source, target, target status, internal or external, and its `follow` directive (`follow`, `nofollow`, `ugc`, `sponsored`) with where that came from (`anchor` or `meta`). Available once a crawl has ended.
 
-After a crawl, the **Issues** tab runs a set of SEO checks across all crawled HTML pages and lists findings grouped by severity.
+### Saved crawls
+
+Every crawl is saved automatically while it runs, including partial ones. **Saved crawls** in the top bar opens, renames and deletes them; scheduled crawls are marked. Data lives in IndexedDB, one record per URL, and crawls from older versions are converted on first start.
+
+## Issues
+
+The **Issues** tab reports what needs attention, most serious first. Click a row to open that page's details.
 
 | Check | Severity | Description |
 |-------|----------|-------------|
-| Broken pages | Error | Pages returning 4xx or 5xx |
-| Robots-blocked | Error | Pages blocked by robots.txt for the active UA |
-| Redirects | Warning | Pages returning 3xx |
-| Missing title | Warning | HTML pages with no `<title>` |
-| Missing H1 | Warning | HTML pages with no `<h1>` |
-| Missing description | Warning | HTML pages with no meta description |
-| Missing canonical | Info | HTML pages with no canonical tag |
-| Duplicate titles | Warning | Title text shared by more than one HTML page |
-| Broken outbound links | Warning | Pages that link to URLs returning 4xx/5xx |
+| Broken pages | Error | Pages answering 4xx or 5xx, or not at all |
+| Pages linking to broken URLs | Error | Links from crawled pages to failing URLs |
+| Broken external links | Error | External URLs that failed the link check |
+| Redirected pages | Warning | Requested URLs that redirect |
+| Blocked by robots.txt | Warning | URLs not fetched because of robots.txt |
+| Missing title | Warning | HTML pages without `<title>` |
+| Duplicate titles | Warning | Title text shared by several pages |
+| Multiple canonicals | Warning | More than one canonical declaration, from tags or the `Link` header |
+| Noindex pages | Notice | Excluded through robots meta, `googlebot` meta or `X-Robots-Tag` |
+| Missing H1 / meta description / canonical | Notice | HTML pages without them |
+| Truncated pages | Notice | Pages over the 5 MB limit |
 
-Checks for title, H1, description, canonical, and duplicate titles are only applied to pages with a `text/html` content type. Clicking an issue row opens the URL detail view for that page.
+## Advanced settings
 
-## Configuration
-
-Open via the **Configuration** button in the navbar.
+Under **Advanced** in the setup panel.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| crawl mode | list | `list` or `autonomous` (recursive spider) |
-| max pages limit | 500 | Upper bound for autonomous mode |
-| crawl filter regex | — | Regex applied to discovered URLs in autonomous mode |
-| crawl filter type | off | `include` or `exclude` the regex matches |
-| max retries | 2 | How many times to retry a failed URL |
-| crawl delay | 0 ms | Pause between requests |
-| max connections | 5 | Concurrent fetch limit |
-| stay on hostname | off | Skip URLs from other hostnames (auto-enabled in autonomous mode) |
-| respect robots.txt | on | Honour robots.txt rules for the active bot User-Agent |
-| fetch outbound | off | In list mode: fully crawl discovered outbound links (all stats) without adding them to the queue |
-| credentials | omit | Cookie/auth handling (`omit`, `same-origin`, `include`) |
-| cache | no-store | Browser cache behaviour |
-| document charset | utf-8 | Encoding used to decode response bodies |
-| extract text | off | Extract article body with Mozilla Readability |
-| save HTML to OPFS | off | Save raw HTML responses to the browser's Origin Private File System |
-| OPFS root directory | crawl_archive | Folder name within OPFS |
-
-A **manage overrides →** link in the robots.txt row opens the robots.txt management page.
+| Parallel requests | 5 | Requests in flight at once, up to 32 |
+| Delay per host | none | Minimum time between requests to one host. A larger robots.txt `Crawl-delay` wins. |
+| Retries | 2 | Retries after network errors, 5xx and 429, with backoff. `Retry-After` is honoured. |
+| Respect robots.txt | on | Blocked URLs are listed but not fetched. A 4xx robots.txt allows everything; a 5xx or unreachable one blocks the host, per RFC 9309. |
+| Check external links | off | Checks the status of each external link. External URLs are not crawled further. |
+| Archive HTML of each page | off | Stores raw HTML in the browser's Origin Private File System |
+| Archive folder | crawl_archive | Folder name within OPFS |
+| Cookies and credentials | Never send | Cookie and auth handling |
+| HTTP cache | Always fetch, keep cache untouched | Browser cache behaviour |
+| Fallback charset | utf-8 | Used when neither the header nor `<meta>` declare a charset |
 
 ## robots.txt management
 
-A dedicated page (`robots.txt management`) is accessible from the Configuration modal. It lets you view and override the robots.txt content for any crawled hostname, so you can control crawl behaviour without modifying the live server.
+A dedicated page, linked under **Advanced** in the setup panel, lets you view and override the robots.txt content for any crawled hostname, so you can control crawl behaviour without modifying the live server.
 
-- **Fetched** column — the robots.txt retrieved from the server (read-only).
-- **Override** column — editable content that replaces the fetched robots.txt during crawls. Leave empty to allow all.
-- **Save override** — stores the override in `chrome.storage.local`; takes effect on the next crawl.
-- **Clear override** — removes the override and reverts to the fetched robots.txt.
-- **Re-fetch** — re-downloads the live robots.txt from the server.
-- **Add override for new origin** — enter any origin URL, optionally click **Fetch** to populate the textarea with the live robots.txt, edit as needed, and click **Save override**.
+- **Fetched robots.txt** — the file last retrieved from the server (read-only).
+- **Override** — replaces the fetched file during crawls. Leave it empty to allow everything.
+- **Save override** — takes effect on the next crawl.
+- **Remove override** — goes back to the live file.
+- **Fetch again** — downloads the live file again.
+- **Add an override** — enter any site, optionally click **Fetch current file**, edit, and save.
 
 ## Options page
 
-Right-click the dragon icon → **Options** (or navigate to the options URL from `chrome://extensions`).
+Use the gear icon in the top bar, or right-click the dragon icon → **Options**.
 
 ### User-Agent
 
@@ -177,76 +159,31 @@ Lets you override the browser's User-Agent for all extension requests. Presets i
 
 The active bot name is extracted from the selected UA and used for robots.txt evaluation.
 
-### URL-Filter Presets
+### URL filter presets
 
-Named regex presets that appear in the **regex** dropdown on the crawl page. Each preset stores a name, a pattern, and a type (include or exclude). Clicking a saved preset applies it to the URL list immediately.
+Named regular expressions that appear as chips under the URL filter. Each stores a name, a pattern and a mode; clicking one fills in the filter.
 
 | Field | Description |
 |-------|-------------|
 | Name | Display label for the preset |
 | Regex | Regular expression pattern |
-| Type | `include` (keep matching) or `exclude` (remove matching) |
+| Mode | *Only matching* or *Skip matching* |
 
-### Saved Crawls
+### Storage
 
-Storage management for all IndexedDB (IDB) and OPFS crawl data.
+- **Storage bar** — total browser storage used and available.
+- **Crawl list** — all saved crawls and HTML archives. Archives whose crawl no longer exists are flagged.
+- **Rename** — renames the crawl.
+- **↓ ZIP** — downloads the crawl's HTML archive.
+- **Delete data**, **Delete HTML archive**, **Delete everything** — remove the crawl's data, its archive, or both.
 
-- **Storage quota bar** — shows total browser storage used vs. available.
-- **Crawl list** — unified view of all IDB entries and OPFS directories matched by crawl ID. Newest crawls appear first; OPFS directories without a matching IDB entry are flagged as **orphans**.
-- **Rename** — inline rename of the crawl name in IDB (press Enter or click away to save).
-- **↓ ZIP** — downloads all HTML files stored in the OPFS directory for that crawl as a ZIP archive.
-- **Delete IDB** — removes the JSON result blob from IndexedDB; OPFS files are kept.
-- **Delete OPFS** — removes the HTML archive directory from OPFS; IDB entry is kept.
-- **Delete all** — removes both IDB and OPFS data for the crawl.
+## Schedules
 
-## Schedules tab
+Recurring crawls run in the background while Chrome is open, even with the tab closed. They use the same crawler and the same *Advanced* settings as manual crawls.
 
-Scheduled crawls run in the background at a fixed interval — even when the extension page is closed.
+**New schedule** asks for a name (`{hostname}` and `{datetime}` are filled in at run time), a mode, a start URL or list of URLs and sitemaps, a page limit, an optional URL filter, and how often to run.
 
-### Creating a schedule
-
-1. **Name** — a label for this schedule. `{hostname}` and `{datetime}` are replaced at runtime. Default: `{hostname} {datetime}`.
-2. **URL sources** — one or more of:
-   - *Spider URL* — fetches the page and crawls all linked URLs found on it
-   - *URL list* — a fixed list of URLs, one per line
-   - *Sitemap URL* — fetches the sitemap XML and crawls all `<loc>` entries
-3. **Regex filter** — optionally filter the resolved URL list by include or exclude.
-4. **Frequency** — how often to run: Hourly, Every 2h / 4h / 6h / 12h, Daily, or Weekly.
-5. **At time** — anchor the run to a specific time of day (e.g. `03:00`). Hourly and multi-hour schedules use this as the starting point on the period grid; daily schedules fire at exactly this time each day.
-6. **Day** — (Weekly only) the day of the week to run.
-
-Click **add** to save the schedule.
-
-### Schedule table
-
-Each row shows: property (the crawl target), interval, last run time with ok/total stats, next scheduled run, and status.
-
-| Status | Meaning |
-|--------|---------|
-| `active` (green) | Schedule is enabled and waiting for its next run |
-| `N/M pages` (blue, pulsing) | Crawl is running — live page count updated in real time |
-| `paused` (grey) | Schedule is disabled |
-
-| Button | Action |
-|--------|--------|
-| ↓ | Loads the last result into the table and switches to the Crawl tab |
-| ⚡ | Triggers an immediate crawl (disabled while a run is in progress) |
-| pause / resume | Enables or disables the scheduled interval |
-| ✕ | Deletes the schedule |
-
-Completed crawls are automatically saved to **Crawls → Load**. If a scheduled crawl fires while a manual crawl is already running, it is queued and starts as soon as the manual crawl finishes.
-
-## Stats tab
-
-Aggregated crawl statistics, visible during and after a crawl. Updates in real-time as pages are fetched; also populated when loading a saved crawl.
-
-| Section | Content |
-|---------|---------|
-| Summary | Total URLs encountered, crawled, blocked by robots.txt, internal, external, indexable, non-indexable |
-| Status codes | Count per HTTP status code, sorted by frequency |
-| Content types | Count per content-type, sorted by frequency |
-
-Clicking any **Status codes** or **Content types** row — or the **Indexable** / **Non-indexable** / **Internal** / **External** rows in Summary — filters the results table to matching rows and switches to the Crawl tab.
+Each schedule shows its next run and last result, with **Open last result**, **Run now**, **Pause** and delete. Only one crawl runs at a time: if a schedule comes due during another crawl, even a paused one, it is queued and starts when that crawl ends. Finished runs appear in **Saved crawls**.
 
 ## Tech stack
 
@@ -256,11 +193,30 @@ Clicking any **Status codes** or **Content types** row — or the **Indexable** 
 | CSS | Tailwind CSS v3 |
 | Table | Tabulator v6 |
 | CSV parsing | PapaParse |
-| Text extraction | @mozilla/readability |
 | Robots.txt parsing | google-robotstxt-parser |
 | HTML parsing | node-html-parser |
+| Sitemap gzip, ZIP export | `DecompressionStream`, fflate |
 | Background scheduling | `chrome.alarms` API (Manifest V3) |
-| Storage | `chrome.storage.local` + Origin Private File System (OPFS) |
+| Storage | IndexedDB, `chrome.storage.local`, Origin Private File System (OPFS) |
+
+## Development
+
+```bash
+npm test             # unit tests, no browser needed
+npm run test:e2e     # builds, then runs the extension in Chrome for Testing
+npm run screenshots  # retakes the images in docs/screenshots
+```
+
+The end-to-end suites need Chrome for Testing, since branded Chrome ignores `--load-extension`. Install it with `npx @puppeteer/browsers install chrome@stable --path ~/.cache/puppeteer`, or set `CHROME` to its path. They only talk to local servers and load a temporary copy of `dist/`. `node test/e2e/run-all.mjs rank ui` runs a selection.
+
+Timing checks report `SLOW` under load instead of failing.
+
+### Releasing
+
+1. Raise `version` in both `public/manifest.json` and `package.json`.
+2. Commit, then tag and push: `git tag v0.1.0 && git push origin main v0.1.0`.
+
+The *Build & Release* workflow runs the unit tests, builds, and attaches `blue-dragon-<version>.zip` to a GitHub release. It refuses to release when the tag, the manifest and `package.json` disagree. The ZIP has `manifest.json` at its root, so it uploads to the Chrome Web Store as it is. Pushes to `main` run the same build and keep the ZIP as a workflow artifact.
 
 ## License
 

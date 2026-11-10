@@ -4,620 +4,447 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="referrer" content="none" />
-    <title>blue dragon</title>
+    <title>Blue Dragon</title>
+    <link rel="icon" href="icons/dragon32.png" />
+    <script src="/theme-init.js"></script>
     <link rel="stylesheet" href="./style.css" />
   </head>
-  <body class="bg-white text-slate-800 min-h-screen">
+  <body>
+    <svg class="sprite" aria-hidden="true">
+      <defs>
+        <g id="i-play"><path d="M7 4.5v15l12-7.5z" fill="currentColor" stroke="none"/></g>
+        <g id="i-pause"><path d="M8 5v14M16 5v14"/></g>
+        <g id="i-stop"><rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor" stroke="none"/></g>
+        <g id="i-x"><path d="M6 6l12 12M18 6 6 18"/></g>
+        <g id="i-check"><path d="m5 12.5 4.5 4.5L19 7.5"/></g>
+        <g id="i-alert"><path d="M12 8.5v4.5M12 16.5v.01M10.3 4.2 2.9 17a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"/></g>
+        <g id="i-info"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></g>
+        <g id="i-ban"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></g>
+        <g id="i-redirect"><path d="M4 17V11a4 4 0 0 1 4-4h11M15 3l4 4-4 4"/></g>
+        <g id="i-search"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></g>
+        <g id="i-columns"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M9.5 4.5v15M15 4.5v15"/></g>
+        <g id="i-download"><path d="M12 4v11M7.5 11 12 15.5 16.5 11M4 19.5h16"/></g>
+        <g id="i-archive"><path d="M4 7.5h16M5.5 7.5V18a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7.5M3.5 4h17v3.5h-17zM10 12h4"/></g>
+        <g id="i-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></g>
+        <g id="i-moon"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></g>
+        <g id="i-settings"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.9 2.9l-.1-.1a1.7 1.7 0 0 0-2.8 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.8-1.2l-.1.1a2 2 0 1 1-2.9-2.9l.1-.1a1.7 1.7 0 0 0-1.2-2.8H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.8l-.1-.1a2 2 0 1 1 2.9-2.9l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.8 1.2l.1-.1a2 2 0 1 1 2.9 2.9l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g>
+        <g id="i-sidebar"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M9.5 4.5v15"/></g>
+        <g id="i-clock"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></g>
+        <g id="i-folder"><path d="M3.5 7a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></g>
+        <g id="i-trash"><path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.5h6.4a1.5 1.5 0 0 0 1.5-1.5l.8-12M10 11v5.5M14 11v5.5"/></g>
+        <g id="i-pencil"><path d="m15 5 4 4M4 20l1-5L16 4a1.4 1.4 0 0 1 2 0l2 2a1.4 1.4 0 0 1 0 2L9 19z"/></g>
+        <g id="i-plus"><path d="M12 5v14M5 12h14"/></g>
+        <g id="i-arrow-left"><path d="M19 12H5M11 6l-6 6 6 6"/></g>
+        <g id="i-arrow-right"><path d="M5 12h14M13 6l6 6-6 6"/></g>
+        <g id="i-external"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></g>
+        <g id="i-eye"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></g>
+        <g id="i-chevron"><path d="m9 6 6 6-6 6"/></g>
+        <g id="i-rank"><path d="M4 19.5h16M6 16V9M12 16V4.5M18 16v-5"/></g>
+        <g id="i-bolt"><path d="M13 3 5 13.5h6L10 21l9-11h-6.5z"/></g>
+      </defs>
+    </svg>
 
-    <!-- Navbar -->
-    <header class="border-b border-slate-200 bg-white px-4 py-2.5 flex items-center gap-5">
-      <img src="icons/dragon32.png" alt="blue dragon" class="w-6 h-6 shrink-0" />
+    <div class="app" id="app">
+      <header class="topbar">
+        <a class="brand" href="dragon.html" aria-label="Blue Dragon, start over">
+          <img src="icons/dragon32.png" alt="" width="26" height="26" />
+          <span>Blue Dragon</span>
+        </a>
+        <button id="railToggle" class="icon-btn" aria-label="Toggle setup panel" aria-expanded="true" aria-controls="rail"></button>
 
-      <!-- Crawls dropdown -->
-      <div id="crawlsDropdown" class="relative">
-        <button data-menu="crawls-menu"
-          class="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 select-none cursor-pointer">
-          Crawls
-          <svg class="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
+        <nav class="view-switch" aria-label="Main views">
+          <button id="navResults" class="view-link" aria-current="page">Crawl</button>
+          <button id="navSchedules" class="view-link">Schedules</button>
+        </nav>
+
+        <div class="topbar-spacer"></div>
+
+        <button id="paletteBtn" class="command-hint">
+          <span id="paletteIcon"></span>
+          <span>Search actions</span>
+          <kbd id="paletteKey">⌘K</kbd>
         </button>
-        <ul id="crawls-menu" class="dropdown-menu hidden absolute top-full left-0 mt-1 w-44 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1">
-          <li><button id="save"
-            class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">save current</button></li>
-          <li><button data-dialog="loadModal"
-            class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">load</button></li>
-          <li><button data-dialog="deleteModal"
-            class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">delete</button></li>
-        </ul>
+        <button id="savedBtn" class="btn btn-ghost"><span id="savedIcon"></span>Saved crawls</button>
+        <button id="themeBtn" class="icon-btn" aria-label="Switch theme"></button>
+        <a class="icon-btn" href="options.html" target="_blank" aria-label="Options" id="optionsLink"></a>
+      </header>
+
+      <div class="workspace" id="workspace">
+        <!-- Setup -->
+        <aside class="rail" id="rail" aria-label="Crawl setup">
+          <form id="setupForm" novalidate>
+            <fieldset id="setupFields">
+              <legend class="sr-only">Crawl setup</legend>
+              <div class="rail-body">
+                <section class="rail-section">
+                  <h2 class="rail-heading">What to crawl</h2>
+                  <div class="segmented" role="radiogroup" aria-label="Source" id="sourcePicker">
+                    <label><input type="radio" name="source" value="website" /><span>Website</span></label>
+                    <label><input type="radio" name="source" value="list" /><span>URL list</span></label>
+                    <label><input type="radio" name="source" value="sitemap" /><span>Sitemap</span></label>
+                    <label><input type="radio" name="source" value="csv" /><span>CSV</span></label>
+                  </div>
+
+                  <div class="source-panel" data-source="website">
+                    <label class="field">
+                      <span class="field-label">Start URL</span>
+                      <input id="startUrl" type="url" class="input" placeholder="https://example.com" autocomplete="url" spellcheck="false" aria-describedby="startUrlError" />
+                      <span id="startUrlError" class="field-error" hidden></span>
+                    </label>
+                    <div class="field-row">
+                      <label class="field">
+                        <span class="field-label">Page limit</span>
+                        <input id="maxPages" type="number" class="input" min="1" inputmode="numeric" />
+                      </label>
+                      <label class="check check-inline">
+                        <input id="stayonhostname" type="checkbox" />
+                        <span>Stay on this hostname</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="source-panel" data-source="list" hidden>
+                    <label class="field">
+                      <span class="field-label field-label-split">
+                        URLs, one per line
+                        <span id="urlCount" class="field-meta"></span>
+                      </span>
+                      <textarea id="urlList" class="input input-mono" rows="9" spellcheck="false" placeholder="https://example.com/page-1&#10;https://example.com/page-2" aria-describedby="urlListError"></textarea>
+                      <span id="urlListError" class="field-error" hidden></span>
+                    </label>
+                    <div class="inline-action">
+                      <label class="sr-only" for="spiderUrl">Add all links from a page</label>
+                      <input id="spiderUrl" type="url" class="input" placeholder="Add links from a page…" spellcheck="false" />
+                      <button id="spiderBtn" type="button" class="btn">Add</button>
+                    </div>
+                  </div>
+
+                  <div class="source-panel" data-source="sitemap" hidden>
+                    <label class="field">
+                      <span class="field-label">Sitemap URL</span>
+                      <span class="inline-action">
+                        <input id="sitemapUrl" type="url" class="input" placeholder="https://example.com/sitemap.xml" spellcheck="false" />
+                        <button id="sitemapBtn" type="button" class="btn">Load</button>
+                      </span>
+                    </label>
+                    <label class="dropzone" id="sitemapDrop">
+                      <input id="sitemapFile" type="file" accept=".xml,.gz,application/xml,text/xml,application/gzip" />
+                      <strong>Choose a sitemap file</strong>
+                      <span>or drop .xml / .xml.gz here</span>
+                    </label>
+                    <p id="sitemapStatus" class="hint" role="status"></p>
+                  </div>
+
+                  <div class="source-panel" data-source="csv" hidden>
+                    <label class="dropzone" id="csvDrop">
+                      <input id="csvFile" type="file" accept=".csv,text/csv" />
+                      <strong>Choose a CSV file</strong>
+                      <span>or drop it here. A <code>URL</code>, <code>Page</code> or <code>Address</code> column is required; <code>Clicks</code> and <code>Impressions</code> become table columns.</span>
+                    </label>
+                    <p id="csvStatus" class="hint" role="status"></p>
+                  </div>
+                </section>
+
+                <section class="rail-section">
+                  <h2 class="rail-heading">URL filter</h2>
+                  <div class="segmented segmented-sm" role="radiogroup" aria-label="Filter mode" id="filterType">
+                    <label><input type="radio" name="filterType" value="" /><span>Off</span></label>
+                    <label><input type="radio" name="filterType" value="include" /><span>Only matching</span></label>
+                    <label><input type="radio" name="filterType" value="exclude" /><span>Skip matching</span></label>
+                  </div>
+                  <div id="filterFields" hidden>
+                    <label class="field">
+                      <span class="sr-only">Regular expression</span>
+                      <input id="filterRegex" class="input input-mono" placeholder="/blog/" spellcheck="false" aria-describedby="filterError" />
+                      <span id="filterError" class="field-error" hidden></span>
+                    </label>
+                    <p id="filterMatch" class="hint"></p>
+                    <div id="filterPresets" class="chips" role="group" aria-label="Filter presets"></div>
+                  </div>
+                </section>
+
+                <details class="rail-section advanced">
+                  <summary class="rail-heading"><span id="advancedChevron"></span>Advanced</summary>
+                  <div class="advanced-body">
+                    <label class="field">
+                      <span class="field-label field-label-split">Parallel requests <output id="maxConnectionsValue" class="field-meta"></output></span>
+                      <input id="maxConnections" type="range" min="1" max="32" step="1" />
+                    </label>
+                    <label class="field">
+                      <span class="field-label field-label-split">Delay per host <output id="delayValue" class="field-meta"></output></span>
+                      <input id="delay" type="range" min="0" max="3000" step="50" />
+                    </label>
+                    <label class="field">
+                      <span class="field-label field-label-split">Retries <output id="maxRetriesValue" class="field-meta"></output></span>
+                      <input id="maxRetries" type="range" min="0" max="5" step="1" />
+                    </label>
+
+                    <label class="check"><input id="respectRobots" type="checkbox" /><span>Respect robots.txt</span></label>
+                    <a class="link-sm" href="robots.html" target="_blank">Manage robots.txt overrides</a>
+                    <label class="check"><input id="fetchOutbound" type="checkbox" /><span>Check external links</span></label>
+                    <label class="check"><input id="opfsEnabled" type="checkbox" /><span>Archive HTML of each page</span></label>
+                    <label class="field" id="opfsDirField" hidden>
+                      <span class="field-label">Archive folder</span>
+                      <input id="opfsRootDir" class="input" placeholder="crawl_archive" spellcheck="false" />
+                    </label>
+
+                    <label class="field">
+                      <span class="field-label">Cookies and credentials</span>
+                      <select id="credentials" class="input">
+                        <option value="omit">Never send</option>
+                        <option value="same-origin">Same origin only</option>
+                        <option value="include">Always send</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span class="field-label">HTTP cache</span>
+                      <select id="cache" class="input">
+                        <option value="no-store">Always fetch, keep cache untouched</option>
+                        <option value="reload">Always fetch, update cache</option>
+                        <option value="no-cache">Revalidate with the server</option>
+                        <option value="default">Browser default</option>
+                        <option value="force-cache">Prefer cache, even if stale</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span class="field-label">Fallback charset</span>
+                      <input id="charset" class="input" list="charsetOptions" placeholder="utf-8" spellcheck="false" />
+                      <datalist id="charsetOptions"><option value="utf-8"></option><option value="iso-8859-1"></option><option value="windows-1252"></option></datalist>
+                    </label>
+                    <a class="link-sm" href="options.html" target="_blank">Change crawler User-Agent</a>
+                  </div>
+                </details>
+              </div>
+            </fieldset>
+
+            <div class="rail-footer">
+              <button id="crawlBtn" type="submit" class="btn btn-primary btn-block"><span id="crawlBtnIcon"></span><span id="crawlBtnLabel">Start crawl</span></button>
+            </div>
+          </form>
+        </aside>
+
+        <!-- Results -->
+        <main class="main" id="viewResults">
+          <section class="statusbar" id="statusbar" data-state="idle" aria-label="Crawl status">
+            <div class="status-line">
+              <span class="status-dot" aria-hidden="true"></span>
+              <div class="status-text" role="status" aria-live="polite">
+                <strong id="statusTitle">Ready</strong>
+                <span id="statusDetail" class="status-detail"></span>
+              </div>
+              <div class="status-actions">
+                <button id="showLiveBtn" class="btn btn-sm" hidden>Show</button>
+                <button id="renameBtn" class="btn btn-ghost btn-sm" hidden></button>
+                <button id="pauseBtn" class="btn btn-sm" hidden></button>
+                <button id="stopBtn" class="btn btn-sm" hidden></button>
+              </div>
+            </div>
+            <div class="progress" id="progressWrap" role="progressbar" aria-label="Crawl progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
+              <div class="progress-bar" id="progressBar"></div>
+            </div>
+          </section>
+
+          <div class="tabs" role="tablist" aria-label="Results" id="resultTabs">
+            <button role="tab" id="tab-pages" data-tab="pages" aria-controls="panelPages" aria-selected="true">Pages <span class="tab-count" id="countPages">0</span></button>
+            <button role="tab" id="tab-overview" data-tab="overview" aria-controls="panelOverview" aria-selected="false" tabindex="-1">Overview</button>
+            <button role="tab" id="tab-issues" data-tab="issues" aria-controls="panelIssues" aria-selected="false" tabindex="-1">Issues <span class="tab-count" id="countIssues">0</span></button>
+            <button role="tab" id="tab-links" data-tab="links" aria-controls="panelLinks" aria-selected="false" tabindex="-1">Links</button>
+          </div>
+
+          <div class="panels">
+            <section id="panelPages" class="panel panel-table" role="tabpanel" aria-labelledby="tab-pages" tabindex="-1">
+              <div class="toolbar">
+                <div class="search">
+                  <span id="searchIcon"></span>
+                  <input id="tableSearch" type="search" class="input" placeholder="Filter by URL, title or H1" aria-label="Filter pages" />
+                  <kbd class="search-key">/</kbd>
+                </div>
+                <div id="quickFilters" class="chips" role="group" aria-label="Quick filters"></div>
+                <div class="toolbar-spacer"></div>
+                <div class="popover-anchor">
+                  <button id="columnsBtn" class="btn btn-ghost"><span id="columnsIcon"></span>Columns</button>
+                  <div id="columnsPanel" class="popover columns-panel" hidden></div>
+                </div>
+                <button id="rankBtn" class="btn btn-ghost" hidden><span id="rankIcon"></span><span id="rankBtnLabel">Rank pages</span></button>
+                <button id="exportCsvBtn" class="btn btn-ghost"><span id="exportIcon"></span>Export CSV</button>
+                <button id="exportZipBtn" class="btn btn-ghost" hidden><span id="zipIcon"></span>HTML ZIP</button>
+              </div>
+              <div class="table-frame">
+                <div id="pagesTable"></div>
+                <div id="pagesEmpty" class="empty" hidden></div>
+              </div>
+            </section>
+
+            <section id="panelOverview" class="panel panel-scroll" role="tabpanel" aria-labelledby="tab-overview" tabindex="-1" hidden></section>
+            <section id="panelIssues" class="panel panel-scroll" role="tabpanel" aria-labelledby="tab-issues" tabindex="-1" hidden></section>
+            <section id="panelLinks" class="panel panel-table" role="tabpanel" aria-labelledby="tab-links" tabindex="-1" hidden>
+              <div class="toolbar">
+                <div class="search">
+                  <span id="linksSearchIcon"></span>
+                  <input id="linksSearch" type="search" class="input" placeholder="Filter by source or target" aria-label="Filter links" />
+                </div>
+                <span id="linksCount" class="toolbar-meta"></span>
+              </div>
+              <div class="table-frame">
+                <div id="linksTable"></div>
+                <div id="linksEmpty" class="empty" hidden></div>
+              </div>
+            </section>
+          </div>
+        </main>
+
+        <!-- Schedules -->
+        <main class="main" id="viewSchedules" hidden></main>
+
+        <!-- Page detail -->
+        <aside class="drawer" id="drawer" aria-label="Page details" tabindex="-1" hidden></aside>
       </div>
-
-      <button data-dialog="configModal"
-        class="text-sm text-slate-600 hover:text-slate-900 cursor-pointer">Configuration</button>
-
-      <!-- URLs dropdown -->
-      <div id="urlsDropdown" class="relative">
-        <button data-menu="urls-menu"
-          class="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 select-none cursor-pointer">
-          URLs
-          <svg class="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        <ul id="urls-menu" class="dropdown-menu hidden absolute top-full left-0 mt-1 w-36 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1">
-          <li><button data-dialog="csvModal"
-            class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">CSV</button></li>
-          <li><button data-dialog="sitemapModal"
-            class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">sitemap</button></li>
-        </ul>
-      </div>
-    </header>
-
-    <!-- Tab bar -->
-    <div class="border-b border-slate-200 bg-white px-4 flex">
-      <button data-tab="crawl"
-        class="tab-btn px-5 py-2.5 text-sm font-medium text-blue-600 border-b-2 border-blue-600 -mb-px">Crawl</button>
-      <button data-tab="schedules"
-        class="tab-btn px-5 py-2.5 text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px">Schedules</button>
-      <button data-tab="stats"
-        class="tab-btn px-5 py-2.5 text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px">Stats</button>
-      <button data-tab="issues"
-        class="tab-btn px-5 py-2.5 text-sm text-slate-500 hover:text-slate-700 border-b-2 border-transparent -mb-px">Issues</button>
     </div>
 
-    <main class="max-w-screen-2xl mx-auto px-4 py-4">
-      <div id="panelCrawl" class="space-y-3">
-
-      <!-- Progress bar -->
-      <div id="progressContainer" class="hidden h-5 w-full bg-slate-100 rounded relative overflow-hidden">
-        <div id="progress"
-          class="absolute top-0 left-0 h-full bg-blue-500 transition-all duration-200"
-          style="width: 0%"></div>
-        <span id="progressLabel"
-          class="absolute inset-0 flex items-center px-2 text-xs text-white"
-          style="text-shadow: 0 1px 2px rgba(0,0,0,0.45)">–</span>
+    <!-- Saved crawls -->
+    <dialog id="savedDialog" class="dialog dialog-md" aria-labelledby="savedTitle">
+      <header class="dialog-head">
+        <h2 id="savedTitle">Saved crawls</h2>
+        <button class="icon-btn" data-dialog-close aria-label="Close"></button>
+      </header>
+      <div class="dialog-search">
+        <input id="savedSearch" type="search" class="input" placeholder="Search saved crawls" aria-label="Search saved crawls" />
       </div>
+      <div id="savedList" class="saved-list"></div>
+    </dialog>
 
-      <!-- Spider URL -->
-      <div class="flex gap-2">
-        <input id="spiderURL" type="search"
-          placeholder="enter source URL to fetch URL list from"
-          class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-        <button id="spiderBtn"
-          class="px-4 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50 shrink-0">fetch</button>
-      </div>
-
-      <!-- URL list -->
-      <div class="space-y-2">
-        <div class="flex items-center justify-between">
-          <label for="urlListTextarea" class="text-xs text-slate-500">or enter URL list:</label>
-          <span id="urlListCount" class="text-xs text-slate-400"></span>
+    <!-- Rename -->
+    <dialog id="renameDialog" class="dialog dialog-sm" aria-labelledby="renameTitle">
+      <form method="dialog" id="renameForm">
+        <header class="dialog-head">
+          <h2 id="renameTitle">Rename crawl</h2>
+          <button type="button" class="icon-btn" data-dialog-close aria-label="Close"></button>
+        </header>
+        <div class="dialog-body">
+          <label class="field">
+            <span class="field-label">Name</span>
+            <input id="renameInput" class="input" required />
+          </label>
         </div>
-        <textarea id="urlListTextarea" rows="8"
-          placeholder="input URLs here line by line"
-          class="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+        <footer class="dialog-foot">
+          <button type="button" class="btn btn-ghost" data-dialog-close>Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </footer>
+      </form>
+    </dialog>
 
-        <!-- Regex filter row -->
-        <div class="flex gap-2">
-          <input id="regexFilter" type="search"
-            placeholder="regex to filter URL list"
-            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+    <!-- Confirm -->
+    <dialog id="confirmDialog" class="dialog dialog-sm" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+      <header class="dialog-head"><h2 id="confirmTitle"></h2></header>
+      <div class="dialog-body"><p id="confirmText"></p></div>
+      <footer class="dialog-foot">
+        <button class="btn btn-ghost" id="confirmCancel">Cancel</button>
+        <button class="btn btn-danger" id="confirmOk"></button>
+      </footer>
+    </dialog>
 
-          <!-- Predefined regex -->
-          <div id="predefinedRegex" class="relative">
-            <button data-menu="regex-presets"
-              class="flex items-center gap-1 px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50 cursor-pointer">
-              regex
-              <svg class="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <ul id="regex-presets" class="dropdown-menu hidden absolute top-full right-0 mt-1 w-52 bg-white border border-slate-200 rounded-lg shadow-lg z-20 py-1">
-              <li><button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                data-regex="[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$">uuid</button></li>
-              <li><button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                data-regex="\/$">ends with slash</button></li>
-              <li><button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                data-regex="\.html$">ends with .html</button></li>
-            </ul>
-          </div>
-
-          <!-- Filter include/exclude -->
-          <div id="regexFilterBtn" class="flex gap-1">
-            <button data-type="include"
-              class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50 cursor-pointer">include</button>
-            <button data-type="exclude"
-              class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50 cursor-pointer">exclude</button>
-          </div>
-        </div>
-
-        <button id="crawlBtn"
-          class="w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">crawl</button>
-        <div id="crawlControls" class="hidden flex gap-2">
-          <button id="pauseBtn"
-            class="flex-1 py-2 text-sm bg-amber-500 text-white rounded hover:bg-amber-600">pause</button>
-          <button id="stopBtn"
-            class="py-2 px-4 text-sm border border-slate-300 rounded text-slate-600 hover:bg-slate-50">stop</button>
-        </div>
-      </div>
-
-      <!-- Table toolbar + results (hidden while crawl is running) -->
-      <div id="resultsArea" class="hidden space-y-2">
-      <div class="flex items-center gap-2 pt-1">
-        <input id="tableSearch" type="search" placeholder="search table…"
-          class="border border-slate-300 rounded px-3 py-1.5 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-        <button id="linksBtn"
-          class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50">links</button>
-        <button id="exportCSVBtn"
-          class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50">export CSV</button>
-        <button id="exportOpfsZipBtn"
-          class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50">export HTML ZIP</button>
-        <div class="relative">
-          <button id="columnsBtn"
-            class="px-3 py-1.5 text-sm border border-slate-300 rounded text-slate-700 hover:bg-slate-50">columns</button>
-          <div id="columnsPanel"
-            class="hidden absolute left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-20 overflow-y-auto max-h-72 w-48 py-1">
-          </div>
-        </div>
-      </div>
-
-      <!-- Table container -->
-      <div id="jsonTable"></div>
-      </div><!-- /resultsArea -->
-
-      </div><!-- /panelCrawl -->
-
-      <!-- Schedules panel -->
-      <div id="panelSchedules" class="hidden space-y-4 pt-2">
-
-        <!-- Add schedule form -->
-        <div class="border border-slate-200 rounded-lg p-4 space-y-4">
-          <p class="text-sm font-medium text-slate-700">New schedule</p>
-
-          <!-- Name template -->
-          <div>
-            <label class="text-xs text-slate-500 block mb-1">Name <span class="text-slate-400">({hostname} and {datetime} are replaced at crawl time)</span></label>
-            <input id="scheduleNameTemplate" type="search" value="{hostname} {datetime}"
-              class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-          </div>
-
-          <!-- URL sources -->
-          <div class="space-y-2">
-            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide">URL sources</p>
-            <div>
-              <label class="text-xs text-slate-500 block mb-1">Spider URL <span class="text-slate-400">(crawls the page and all linked URLs)</span></label>
-              <input id="scheduleSpiderUrl" type="search" placeholder="https://example.com"
-                class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-            </div>
-            <div>
-              <label class="text-xs text-slate-500 block mb-1">URL list <span class="text-slate-400">(one URL per line)</span></label>
-              <textarea id="scheduleUrlList" rows="3"
-                placeholder="https://example.com/page-1&#10;https://example.com/page-2"
-                class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
-            </div>
-            <div>
-              <label class="text-xs text-slate-500 block mb-1">Sitemap URL</label>
-              <input id="scheduleSitemapUrl" type="search" placeholder="https://example.com/sitemap.xml"
-                class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-            </div>
-          </div>
-
-          <!-- Crawl settings -->
-          <div class="space-y-2">
-            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide">Crawl settings</p>
-            <div class="flex gap-2">
-              <div class="flex-1">
-                <label class="text-xs text-slate-500 block mb-1">Crawl Mode</label>
-                <select id="scheduleCrawlMode"
-                  class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="list">list (exact URLs)</option>
-                  <option value="recursive">autonomous (recursive spider)</option>
-                </select>
-              </div>
-              <div class="w-32">
-                <label class="text-xs text-slate-500 block mb-1">Max Pages</label>
-                <input id="scheduleMaxPages" type="number" min="1" value="500"
-                  class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-              </div>
-            </div>
-          </div>
-
-          <!-- Regex filter -->
-          <div class="space-y-1">
-            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide">Regex filter</p>
-            <div class="flex gap-2">
-              <input id="scheduleFilterRegex" type="search" placeholder="e.g. /product/"
-                class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-              <select id="scheduleFilterType"
-                class="border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">off</option>
-                <option value="include">include</option>
-                <option value="exclude">exclude</option>
+    <!-- New schedule -->
+    <dialog id="scheduleDialog" class="dialog dialog-lg" aria-labelledby="scheduleTitle">
+      <form id="scheduleForm" novalidate>
+        <header class="dialog-head">
+          <h2 id="scheduleTitle">New schedule</h2>
+          <button type="button" class="icon-btn" data-dialog-close aria-label="Close"></button>
+        </header>
+        <div class="dialog-body form-grid">
+          <label class="field span-2">
+            <span class="field-label">Name</span>
+            <input id="scheduleName" class="input" value="{hostname} {datetime}" spellcheck="false" aria-describedby="scheduleNameHint" />
+            <span id="scheduleNameHint" class="hint">{hostname} and {datetime} are filled in when the crawl runs.</span>
+          </label>
+          <label class="field">
+            <span class="field-label">Mode</span>
+            <select id="scheduleMode" class="input">
+              <option value="recursive">Follow links from a start URL</option>
+              <option value="list">Crawl a fixed list of URLs</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">Page limit</span>
+            <input id="scheduleMaxPages" type="number" class="input" min="1" value="500" />
+          </label>
+          <label class="field span-2">
+            <span class="field-label" id="scheduleSpiderLabel">Start URL</span>
+            <input id="scheduleSpiderUrl" type="url" class="input" placeholder="https://example.com" spellcheck="false" />
+          </label>
+          <label class="field span-2" data-list-only hidden>
+            <span class="field-label">URLs, one per line</span>
+            <textarea id="scheduleUrlList" class="input input-mono" rows="4" spellcheck="false"></textarea>
+          </label>
+          <label class="field span-2" data-list-only hidden>
+            <span class="field-label">Sitemap URL</span>
+            <input id="scheduleSitemapUrl" type="url" class="input" placeholder="https://example.com/sitemap.xml" spellcheck="false" />
+          </label>
+          <label class="field">
+            <span class="field-label">URL filter</span>
+            <select id="scheduleFilterType" class="input">
+              <option value="">Off</option>
+              <option value="include">Only matching</option>
+              <option value="exclude">Skip matching</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field-label">Regular expression</span>
+            <input id="scheduleFilterRegex" class="input input-mono" placeholder="/blog/" spellcheck="false" />
+          </label>
+          <label class="field">
+            <span class="field-label">How often</span>
+            <select id="scheduleInterval" class="input">
+              <option value="60">Every hour</option>
+              <option value="120">Every 2 hours</option>
+              <option value="240">Every 4 hours</option>
+              <option value="360">Every 6 hours</option>
+              <option value="720">Every 12 hours</option>
+              <option value="1440" selected>Every day</option>
+              <option value="10080">Every week</option>
+            </select>
+          </label>
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">At</span>
+              <input id="scheduleTime" type="time" class="input" value="03:00" />
+            </label>
+            <label class="field" id="scheduleDayField" hidden>
+              <span class="field-label">On</span>
+              <select id="scheduleDay" class="input">
+                <option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
+                <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option>
               </select>
-            </div>
+            </label>
           </div>
-
-          <!-- Schedule interval + time of day -->
-          <div class="space-y-2">
-            <p class="text-xs font-medium text-slate-400 uppercase tracking-wide">Schedule</p>
-            <div class="flex gap-2 items-end flex-wrap">
-              <div class="flex-1 min-w-36">
-                <label class="text-xs text-slate-500 block mb-1">Frequency</label>
-                <select id="scheduleInterval"
-                  class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="60">Hourly</option>
-                  <option value="120">Every 2 hours</option>
-                  <option value="240">Every 4 hours</option>
-                  <option value="360">Every 6 hours</option>
-                  <option value="720">Every 12 hours</option>
-                  <option value="1440" selected>Daily</option>
-                  <option value="10080">Weekly</option>
-                </select>
-              </div>
-              <div class="w-28">
-                <label class="text-xs text-slate-500 block mb-1">At time</label>
-                <input type="time" id="scheduleTime" value="03:00"
-                  class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-              </div>
-              <div class="w-36" id="scheduleDayOfWeekWrap" style="display:none">
-                <label class="text-xs text-slate-500 block mb-1">Day</label>
-                <select id="scheduleDayOfWeek"
-                  class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="0">Sunday</option>
-                  <option value="1" selected>Monday</option>
-                  <option value="2">Tuesday</option>
-                  <option value="3">Wednesday</option>
-                  <option value="4">Thursday</option>
-                  <option value="5">Friday</option>
-                  <option value="6">Saturday</option>
-                </select>
-              </div>
-              <button id="addScheduleBtn"
-                class="px-4 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 shrink-0" style="align-self:flex-end">add</button>
-            </div>
-          </div>
-          <p class="text-xs text-slate-400">Crawls run in the background even when this page is closed.</p>
+          <p id="scheduleError" class="field-error span-2" hidden></p>
+          <p class="hint span-2">Scheduled crawls run in the background, even when this tab is closed, as long as Chrome is open. They use the parallelism and retry settings from the setup panel.</p>
         </div>
-
-        <!-- Schedule list -->
-        <div id="scheduleList"></div>
-
-      </div><!-- /panelSchedules -->
-
-      <!-- Stats panel -->
-      <div id="panelStats" class="hidden flex flex-col" style="height: calc(100vh - 108px)">
-        <div class="flex-1 overflow-y-auto space-y-5 pb-4 pt-2">
-
-          <!-- Summary -->
-          <section>
-            <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Summary</h3>
-            <table class="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
-              <tbody id="logSummaryBody"></tbody>
-            </table>
-          </section>
-
-          <!-- Status codes -->
-          <section>
-            <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Status codes</h3>
-            <table class="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
-              <thead class="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th class="px-3 py-2 text-left text-xs font-medium text-slate-500">status</th>
-                  <th class="px-3 py-2 text-right text-xs font-medium text-slate-500">count</th>
-                </tr>
-              </thead>
-              <tbody id="logStatusBody"></tbody>
-            </table>
-          </section>
-
-          <!-- Content types -->
-          <section>
-            <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Content types</h3>
-            <table class="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
-              <thead class="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th class="px-3 py-2 text-left text-xs font-medium text-slate-500">content-type</th>
-                  <th class="px-3 py-2 text-right text-xs font-medium text-slate-500">count</th>
-                </tr>
-              </thead>
-              <tbody id="logContentBody"></tbody>
-            </table>
-          </section>
-
-        </div>
-      </div><!-- /panelStats -->
-
-      <!-- Issues panel -->
-      <div id="panelIssues" class="hidden space-y-3 pt-2">
-        <div id="issuesList" class="space-y-2"></div>
-      </div><!-- /panelIssues -->
-
-    </main>
-
-    <!-- ── Dialogs ── -->
-
-    <!-- Save crawl -->
-    <dialog id="saveModal">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-        <h2 class="text-base font-medium">save crawl</h2>
-        <button data-dialog-close
-          class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
-      </div>
-      <div class="px-6 py-5 space-y-4">
-        <div>
-          <label class="text-xs text-slate-500 block mb-1">Name <span class="text-slate-400">({hostname} and {datetime} are replaced on save)</span></label>
-          <input id="saveNameTemplate" type="search" value="{hostname} {datetime}"
-            class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-        </div>
-        <button id="saveConfirmBtn"
-          class="w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">save</button>
-      </div>
+        <footer class="dialog-foot">
+          <button type="button" class="btn btn-ghost" data-dialog-close>Cancel</button>
+          <button type="submit" class="btn btn-primary">Create schedule</button>
+        </footer>
+      </form>
     </dialog>
 
-    <!-- Load crawl -->
-    <dialog id="loadModal">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-        <h2 class="text-base font-medium">load crawl</h2>
-        <button data-dialog-close
-          class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
-      </div>
-      <div class="px-6 py-4 max-h-80 overflow-y-auto">
-        <div id="crawlLoadList" class="space-y-1"></div>
-      </div>
+    <!-- Archived HTML preview -->
+    <dialog id="previewDialog" class="dialog dialog-xl" aria-labelledby="previewTitle">
+      <header class="dialog-head">
+        <h2 id="previewTitle">Archived page</h2>
+        <button class="icon-btn" data-dialog-close aria-label="Close"></button>
+      </header>
+      <iframe id="previewFrame" class="preview-frame" title="Archived page" sandbox=""></iframe>
     </dialog>
 
-    <!-- Delete crawl -->
-    <dialog id="deleteModal">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-        <h2 class="text-base font-medium">delete crawl</h2>
-        <button data-dialog-close
-          class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+    <!-- Command palette -->
+    <dialog id="paletteDialog" class="dialog palette" aria-label="Search actions">
+      <div class="palette-search">
+        <input id="paletteInput" type="text" class="input" placeholder="Type an action" role="combobox" aria-expanded="true" aria-controls="paletteList" aria-autocomplete="list" autocomplete="off" spellcheck="false" />
       </div>
-      <div class="px-6 py-4 max-h-80 overflow-y-auto">
-        <div id="crawlDeleteList" class="space-y-1"></div>
-      </div>
+      <ul id="paletteList" class="palette-list" role="listbox" aria-label="Actions"></ul>
     </dialog>
 
-    <!-- Configuration -->
-    <dialog id="configModal">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-        <h2 class="text-base font-medium">crawl configuration</h2>
-        <button data-dialog-close
-          class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
-      </div>
-      <div class="px-6 py-5 space-y-4">
+    <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
 
-        <div class="flex items-center gap-4">
-          <label for="crawlMode" class="w-40 text-sm text-slate-600 shrink-0 font-medium">crawl mode</label>
-          <select id="crawlMode"
-            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="list">list (fixed list of URLs)</option>
-            <option value="recursive">autonomous (recursive spider)</option>
-          </select>
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="maxPages" class="w-40 text-sm text-slate-600 shrink-0 font-medium">max pages limit</label>
-          <input type="number" id="maxPages" min="1" value="500"
-            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="filterRegex" class="w-40 text-sm text-slate-600 shrink-0 font-medium">crawl filter regex</label>
-          <input id="filterRegex" type="text" placeholder="e.g. /product/"
-            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="filterType" class="w-40 text-sm text-slate-600 shrink-0 font-medium">crawl filter type</label>
-          <select id="filterType"
-            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">off</option>
-            <option value="include">include matching</option>
-            <option value="exclude">exclude matching</option>
-          </select>
-        </div>
-
-        <hr class="border-slate-100" />
-
-        <div class="flex items-center gap-4">
-          <label for="maxRetries" class="w-40 text-sm text-slate-600 shrink-0">
-            max retries: <span id="maxRetriesValue" class="font-medium text-slate-800">0</span>
-          </label>
-          <input type="range" id="maxRetries" class="flex-1" min="0" max="3" step="1" value="0" />
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="delay" class="w-40 text-sm text-slate-600 shrink-0">
-            crawl delay: <span id="delayValue" class="font-medium text-slate-800">288</span> ms
-          </label>
-          <input type="range" id="delay" class="flex-1" min="0" max="3000" step="1" value="288" />
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="maxConnections" class="w-40 text-sm text-slate-600 shrink-0">
-            max connections: <span id="maxConnectionsValue" class="font-medium text-slate-800">20</span>
-          </label>
-          <input type="range" id="maxConnections" class="flex-1" min="1" max="60" step="1" value="20" />
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="stayonhostname" class="w-40 text-sm text-slate-600 shrink-0">stay on hostname</label>
-          <input type="checkbox" id="stayonhostname"
-            class="h-4 w-4 rounded border-slate-300 text-blue-600" />
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="respectRobots" class="w-40 text-sm text-slate-600 shrink-0">respect robots.txt</label>
-          <input type="checkbox" id="respectRobots" checked
-            class="h-4 w-4 rounded border-slate-300 text-blue-600" />
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="fetchOutbound" class="w-40 text-sm text-slate-600 shrink-0">fetch outbound</label>
-          <input type="checkbox" id="fetchOutbound"
-            class="h-4 w-4 rounded border-slate-300 text-blue-600" />
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label class="w-40 text-sm text-slate-600 shrink-0">robots.txt</label>
-          <a href="robots.html" target="_blank"
-            class="text-sm text-blue-600 hover:underline">manage overrides →</a>
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="credentials" class="w-40 text-sm text-slate-600 shrink-0">
-            <a href="https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials"
-              target="_blank" class="hover:underline">credentials</a>
-          </label>
-          <select id="credentials"
-            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="omit">omit (no cookies, basic http auth, …)</option>
-            <option value="same-origin">same-origin (cookies, basic http auth, …)</option>
-            <option value="include">include (always cookies, basic http auth, …)</option>
-          </select>
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="cache" class="w-40 text-sm text-slate-600 shrink-0">
-            <a href="https://developer.mozilla.org/en-US/docs/Web/API/Request/cache"
-              target="_blank" class="hover:underline">cache</a>
-          </label>
-          <select id="cache"
-            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="no-store">no-store (fetch always, no cache update)</option>
-            <option value="reload">reload (fetch always, but update cache)</option>
-            <option value="default">default</option>
-            <option value="force-cache">force-cache (get cache, even if stale)</option>
-            <option value="only-if-cached">only-if-cached (same-origin only)</option>
-          </select>
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="charset" class="w-40 text-sm text-slate-600 shrink-0">document charset</label>
-          <input class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            list="charsetOptions" id="charset"
-            placeholder="enter any charset or select" value="utf-8" />
-          <datalist id="charsetOptions">
-            <option value="utf-8"></option>
-            <option value="iso-8859-1"></option>
-          </datalist>
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="readability" class="w-40 text-sm text-slate-600 shrink-0">extract text</label>
-          <input type="checkbox" id="readability"
-            class="h-4 w-4 rounded border-slate-300 text-blue-600" />
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="opfsEnabled" class="w-40 text-sm text-slate-600 shrink-0">save HTML to OPFS</label>
-          <input type="checkbox" id="opfsEnabled"
-            class="h-4 w-4 rounded border-slate-300 text-blue-600" />
-        </div>
-
-        <div class="flex items-center gap-4">
-          <label for="opfsRootDir" class="w-40 text-sm text-slate-600 shrink-0">OPFS root directory</label>
-          <input id="opfsRootDir" type="text" placeholder="crawl_archive"
-            class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-        </div>
-
-      </div>
-    </dialog>
-
-    <!-- CSV import -->
-    <dialog id="csvModal">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-        <h2 class="text-base font-medium">load CSV</h2>
-        <button data-dialog-close
-          class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
-      </div>
-      <div class="px-6 py-5 space-y-4">
-        <div id="csvDropArea"
-          class="border-2 border-dashed border-slate-300 rounded-lg px-6 py-8 text-center text-sm text-slate-500 hover:border-blue-400 transition-colors">
-          drop CSV file here or use the picker below
-        </div>
-        <input type="file" id="csvFileInput" accept="text/csv"
-          class="block w-full text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:border file:border-slate-300 file:rounded file:text-sm file:bg-white file:text-slate-700 hover:file:bg-slate-50" />
-        <button id="loadCSVBtn"
-          class="w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">load URLs</button>
-      </div>
-    </dialog>
-
-    <!-- Sitemap import -->
-    <dialog id="sitemapModal">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-        <h2 class="text-base font-medium">load sitemap</h2>
-        <button data-dialog-close
-          class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
-      </div>
-      <div class="px-6 py-5 space-y-4">
-        <div id="sitemapDropArea"
-          class="border-2 border-dashed border-slate-300 rounded-lg px-6 py-8 text-center text-sm text-slate-500 hover:border-blue-400 transition-colors">
-          drop sitemap XML file here
-        </div>
-        <input type="file" id="sitemapFileInput" accept="application/xml,text/xml,.xml,.gz"
-          class="block w-full text-sm text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:border file:border-slate-300 file:rounded file:text-sm file:bg-white file:text-slate-700 hover:file:bg-slate-50" />
-        <div class="flex items-center gap-2 text-sm text-slate-500">
-          <span class="flex-1 border-t border-slate-200"></span>
-          <span>or enter URL</span>
-          <span class="flex-1 border-t border-slate-200"></span>
-        </div>
-        <input id="sitemapUrlInput" type="search" placeholder="https://example.com/sitemap.xml"
-          class="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-        <button id="loadSitemapBtn"
-          class="w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">load sitemap</button>
-        <p id="sitemapStatus" class="hidden text-xs text-slate-500 text-center"></p>
-      </div>
-    </dialog>
-
-    <!-- Link explorer modal -->
-    <dialog id="linksModal" class="w-[90vw] max-w-6xl rounded-xl shadow-2xl p-0 backdrop:bg-black/40">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-        <div class="flex items-center gap-3">
-          <h2 class="text-base font-medium">internal links</h2>
-          <span class="text-xs bg-slate-100 text-slate-500 rounded-full px-2 py-0.5"><span id="linksCount">0</span> edges</span>
-        </div>
-        <div class="flex items-center gap-3">
-          <input id="linksSearch" type="search" placeholder="filter source or target…"
-            class="border border-slate-300 rounded px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-          <button data-dialog-close class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
-        </div>
-      </div>
-      <div class="p-4">
-        <div id="linksTable"></div>
-      </div>
-    </dialog>
-
-    <!-- URL detail modal -->
-    <dialog id="detailModal" class="w-[90vw] max-w-5xl rounded-xl shadow-2xl p-0 backdrop:bg-black/40 max-h-[90vh] overflow-hidden">
-      <div class="flex flex-col max-h-[90vh]">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
-        <div class="min-w-0">
-          <p id="detailModalTitle" class="text-sm font-medium truncate"></p>
-          <a id="detailModalUrl" href="" target="_blank" class="text-xs text-blue-600 hover:underline break-all"></a>
-        </div>
-        <button data-dialog-close class="ml-4 flex-shrink-0 text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
-      </div>
-      <div class="overflow-y-auto flex-1 p-6 space-y-6">
-        <div id="detailBody" class="space-y-4"></div>
-        <div>
-          <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">
-            Outbound Links <span id="detailOutboundCount" class="normal-case font-normal"></span>
-          </h3>
-          <div id="detailOutboundTable"></div>
-        </div>
-        <div>
-          <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">
-            Inbound Links <span id="detailInboundCount" class="normal-case font-normal"></span>
-          </h3>
-          <div id="detailInboundTable"></div>
-        </div>
-      </div>
-      </div>
-    </dialog>
-
-    <script src="./db.js"></script>
     <script type="module" src="./dragon.js"></script>
   </body>
 </html>
